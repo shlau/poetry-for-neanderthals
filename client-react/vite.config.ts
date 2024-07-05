@@ -5,15 +5,16 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true,
+    // host: true,
+    host: "0.0.0.0",
     watch: {
       usePolling: true,
     },
     proxy: {
-      "/api/golang": {
-        target: "http://localhost:8080",
+      "^/api/*": {
+        target: "http://api-golang:3000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/golang/, ""),
+        rewrite: (path) => path.replace(/^\/api/, ""),
         secure: false,
       },
     },

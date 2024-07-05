@@ -30,6 +30,10 @@ migrate-down:
 dev-compose-up:
 	docker compose -f ${DEV_COMPOSE_FILE} up
 
+.PHONY: dev-compose-up-build
+dev-compose-up-build:
+	docker compose -f ${DEV_COMPOSE_FILE} up --build
+
 .PHONY: dev-compose-down
 dev-compose-down:
 	docker compose -f ${DEV_COMPOSE_FILE} down
