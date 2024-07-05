@@ -1,0 +1,41 @@
+.homepage {
+  background-image: radial-gradient(
+    ellipse farthest-corner at 0 140%,
+    #ec9018 0%,
+    #ffa90b 70%,
+    #ffd343 70%
+  );
+  width: 100%;
+  height: 100%;
+  display: block;
+  text-align: center;
+
+  .page-body {
+    background-image: url("../assets/neanderthal-2.webp");
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+
+      button {
+        &.join-button {
+          background-color: #ff4081;
+        }
+        &.how-to-button {
+          background-color: white;
+          color: black;
+        }
+        &:first-child {
+          margin-right: 50px;
+        }
+
+        text-transform: none;
+      }
+    }
+  }
+}
