@@ -1,10 +1,40 @@
 services:
+  client-react:
+    image: client-react
+    build:
+      context: ./client-react/
+    init: true
+    volumes:
+      - type: bind
+        source: ./client-react
+        target: /usr/src/app/
+      - type: volume
+        target: /usr/src/app/node_modules
+      - type: bind
+        source: ./client-react/vite.config.ts
+        target: /usr/src/app/vite.config.ts
+    networks:
+      - frontend
+    ports:
+      - 5173:5173
   api-golang:
     env_file: ".env"
     image: api-golang
     build:
       context: ./api-golang/
+      target: dev
     init: true
+    volumes:
+      - type: bind
+        source: ./api-golang/
+        target: /app/
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - db
+    ports:
+      - 8080:8080
   db:
     image: postgres:12.19-alpine
     volumes:
@@ -22,3 +52,4 @@ volumes:
   pgdata:
 networks:
   backend:
+  frontend:
