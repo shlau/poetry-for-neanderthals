@@ -12,11 +12,11 @@ postgres:
 
 .PHONY: createdb
 createdb:
-	docker exec -it poetry-for-neanderthals-db-1 createdb --username=projectuser --owner=projectuser poetry
+	docker exec -it poetry-for-neanderthals-db-1 createdb --username=${POSTGRES_USER} --owner=${POSTGRES_USER} poetry
 
 .PHONY: dropdb
 dropdb:
-	docker exec -it poetry-for-neanderthals-db-1 dropdb --username=projectuser poetry
+	docker exec -it poetry-for-neanderthals-db-1 dropdb --username=${POSTGRES_USER} poetry
 
 .PHONY: migrate-up
 migrate-up:
