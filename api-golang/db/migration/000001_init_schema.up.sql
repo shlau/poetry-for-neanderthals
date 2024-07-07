@@ -1,19 +1,19 @@
 CREATE TABLE "games" (
-    "id" integer PRIMARY KEY,
-    "in_progress" boolean,
-    "created_at" timestamp,
-    "poet_idx" integer,
-    "red_score" integer,
-    "blue_score" integer,
+    "id" SERIAL PRIMARY KEY,
+    "in_progress" boolean DEFAULT false,
+    "created_at" timestamp DEFAULT current_timestamp,
+    "poet_idx" integer DEFAULT 0,
+    "red_score" integer DEFAULT 0,
+    "blue_score" integer DEFAULT 0,
     "words" JSONB
 );
 
 CREATE TABLE "users" (
-    "id" integer PRIMARY KEY,
+    "id" SERIAL PRIMARY KEY,
     "name" varchar,
     "team" varchar,
-    "ready" boolean,
-    "created_at" timestamp,
+    "ready" boolean DEFAULT false,
+    "created_at" timestamp DEFAULT current_timestamp,
     "game_id" integer
 );
 

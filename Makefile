@@ -8,7 +8,7 @@ DEBUG_COMPOSE_FILE=docker-compose-debug.yml
 
 .PHONY: postgres
 postgres:
-	docker run --name poetry-for-neanderthals-db-1 -p 5432:5432 -e POSTGRES_USER=projectuser -e POSTGRES_PASSWORD=foobar -d postgres:12.19-alpine
+	docker run --name poetry-for-neanderthals-db-1 -p 5432:5432 -e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:12.19-alpine
 
 .PHONY: createdb
 createdb:

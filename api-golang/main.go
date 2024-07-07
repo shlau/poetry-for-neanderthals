@@ -2,40 +2,49 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/go-chi/render"
+	"poetry.sheldonlau.com/db"
+	"poetry.sheldonlau.com/models"
 )
 
-func getData(w http.ResponseWriter, r *http.Request) {
-	type ColorGroup struct {
-		ID     int
-		Name   string
-		Colors []string
-	}
-	group := ColorGroup{
-		ID:     1,
-		Name:   "Reds",
-		Colors: []string{"Crimson", "Red", "Ruby", "Maroon"},
-	}
-	render.JSON(w, r, group)
+type application struct {
+	router *chi.Mux
+	games  *models.GameModel
 }
+
 func main() {
 	r := chi.NewRouter()
+	conn := db.InitDB()
+
+	app := application{router: r, games: &models.GameModel{Conn: conn}}
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"https://*", "http://*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
-	r.Get("/test", getData)
 
-	http.ListenAndServe(":3000", r)
+	r.Mount("/api", app.routes())
+
+	httpServer := &http.Server{
+		Addr:           os.Getenv("SERVER_PORT"),
+		Handler:        r,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		IdleTimeout:    time.Minute,
+	}
+	httpServer.ListenAndServe()
 }

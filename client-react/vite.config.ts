@@ -19,7 +19,6 @@ export default defineConfig({
       "^/api/*": {
         target: "http://api-golang:3000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
         secure: false,
       },
     },
