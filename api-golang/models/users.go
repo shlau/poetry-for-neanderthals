@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"poetry.sheldonlau.com/db"
 )
 
 type User struct {
@@ -16,7 +16,7 @@ type User struct {
 }
 
 type UserModel struct {
-	Conn *pgx.Conn
+	Conn db.DbConn
 }
 
 func (u *UserModel) Create(name string, team string, gameId int) (User, error) {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"poetry.sheldonlau.com/db"
 )
 
 type Game struct {
@@ -17,7 +18,7 @@ type Game struct {
 }
 
 type GameModel struct {
-	Conn *pgx.Conn
+	Conn db.DbConn
 }
 
 func (g *GameModel) Create(username string, team string) (User, error) {

@@ -19,9 +19,7 @@ type application struct {
 	games  *models.GameModel
 }
 
-func main() {
-	r := chi.NewRouter()
-	conn := db.InitDB()
+func NewServer(r *chi.Mux, conn db.DbConn) *http.Server {
 	defer conn.Close(context.Background())
 
 	app := application{router: r, games: &models.GameModel{Conn: conn}}
@@ -48,5 +46,12 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 		IdleTimeout:    time.Minute,
 	}
-	httpServer.ListenAndServe()
+	return httpServer
+}
+
+func main() {
+	conn := db.InitDB()
+	r := chi.NewRouter()
+	server := NewServer(r, conn)
+	server.ListenAndServe()
 }
