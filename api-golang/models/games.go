@@ -47,5 +47,5 @@ func (g *GameModel) Create(username string, team string) (User, error) {
 		return User{}, err
 	}
 
-	return User{name: username, team: team, id: userId, gameId: gameId}, nil
+	return User{Name: username, Team: team, Id: userId, GameId: gameId}, nil
 }

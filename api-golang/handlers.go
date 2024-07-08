@@ -7,7 +7,8 @@ import (
 )
 
 func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
-	name, team := r.Form.Get("name"), r.Form.Get("team")
+	// name, team := r.Form.Get("name"), r.Form.Get("team")
+	name, team := r.FormValue("name"), r.FormValue("team")
 	if name == "" || team == "" {
 		app.clientError(w, http.StatusBadRequest)
 	}

@@ -8,11 +8,11 @@ import (
 )
 
 type User struct {
-	id        int
-	name      string
-	team      string
+	Id        int
+	Name      string
+	Team      string
 	createdAt time.Time
-	gameId    int
+	GameId    int
 }
 
 type UserModel struct {
@@ -28,5 +28,5 @@ func (u *UserModel) Create(name string, team string, gameId int) (User, error) {
 		return User{}, err
 	}
 
-	return User{id: id, name: name, team: team, gameId: gameId}, nil
+	return User{Id: id, Name: name, Team: team, GameId: gameId}, nil
 }
