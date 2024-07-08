@@ -50,3 +50,33 @@ func (g *GameModel) Create(username string, team string) (User, error) {
 
 	return User{Name: username, Team: team, Id: userId, GameId: gameId}, nil
 }
+
+func (g *GameModel) Join(username string, gameId int) (User, error) {
+	ctx := context.Background()
+	tx, err := g.Conn.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return User{}, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	var gameExists bool
+	stmt := `SELECT EXISTS(SELECT true FROM games WHERE id = $1)`
+	err = g.Conn.QueryRow(ctx, stmt).Scan(&gameExists)
+	if err != nil || !gameExists {
+		return User{}, err
+	}
+
+	var userId int
+	stmt = `INSERT INTO users (name, game_id) VALUES($1, $2, $3) RETURNING id`
+	err = g.Conn.QueryRow(ctx, stmt, username, gameId).Scan(&userId)
+	if err != nil {
+		return User{}, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+
+	return User{Name: username, Id: userId, GameId: gameId}, nil
+}

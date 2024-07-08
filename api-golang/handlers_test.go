@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -62,4 +63,51 @@ func TestCreateGame(t *testing.T) {
 
 		AssertStatus(t, response.Code, http.StatusOK)
 	})
+}
+
+func TestJoinGame(t *testing.T) {
+	t.Run("it returns client error if request params are invalid", func(t *testing.T) {
+		server, conn := NewMockServer(t)
+		defer conn.Close(context.Background())
+		request, _ := http.NewRequest(http.MethodPost, `/api/join`, nil)
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+
+		AssertStatus(t, response.Code, http.StatusBadRequest)
+
+	})
+
+	t.Run("it returns server error when no game exists", func(t *testing.T) {
+		server, conn := NewMockServer(t)
+		defer conn.Close(context.Background())
+		conn.ExpectBeginTx(pgx.TxOptions{})
+		conn.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT true FROM games WHERE id = $1)")).WillReturnError(errors.New("invalid game id"))
+		conn.ExpectQuery(regexp.QuoteMeta("INSERT INTO users (name, game_id) VALUES($1, $2, $3) RETURNING id")).WillReturnRows(conn.NewRows([]string{"id"})).WithArgs(2)
+		conn.ExpectCommit()
+		request, _ := http.NewRequest(http.MethodPost, `/api/join?name=name&game_id=1`, nil)
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+
+		AssertStatus(t, response.Code, http.StatusInternalServerError)
+
+	})
+
+	t.Run("it returns successful status", func(t *testing.T) {
+		server, conn := NewMockServer(t)
+		defer conn.Close(context.Background())
+		conn.ExpectBeginTx(pgx.TxOptions{})
+		conn.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT true FROM games WHERE id = $1)")).WillReturnRows(conn.NewRows(
+			[]string{"id"}).
+			AddRow(uint64(1)),
+		)
+		conn.ExpectQuery(regexp.QuoteMeta("INSERT INTO users (name, game_id) VALUES($1, $2, $3) RETURNING id")).WillReturnRows(conn.NewRows([]string{"id"})).WithArgs(2)
+		conn.ExpectCommit()
+		request, _ := http.NewRequest(http.MethodPost, `/api/join?name=name&game_id=1`, nil)
+		response := httptest.NewRecorder()
+		server.Handler.ServeHTTP(response, request)
+
+		AssertStatus(t, response.Code, http.StatusOK)
+
+	})
+
 }
