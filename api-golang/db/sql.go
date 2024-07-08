@@ -14,7 +14,6 @@ func InitDB() *pgx.Conn {
 		log.Fatal("Unable to connect to database.")
 		os.Exit(1)
 	}
-	defer conn.Close(context.Background())
 
 	return conn
 }

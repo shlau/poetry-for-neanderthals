@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -20,6 +22,7 @@ type application struct {
 func main() {
 	r := chi.NewRouter()
 	conn := db.InitDB()
+	defer conn.Close(context.Background())
 
 	app := application{router: r, games: &models.GameModel{Conn: conn}}
 
@@ -35,11 +38,10 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
-
 	r.Mount("/api", app.routes())
 
 	httpServer := &http.Server{
-		Addr:           os.Getenv("SERVER_PORT"),
+		Addr:           fmt.Sprintf(":%s", os.Getenv("SERVER_PORT")),
 		Handler:        r,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,

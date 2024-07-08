@@ -3,15 +3,15 @@ services:
     command:
       - "dlv"
       - "debug"
-      - "/app/main.go"
+      - "/app/"
       - "--listen=:4000"
       - "--headless=true"
       - "--log=true"
-      - "--log-output=debugger,debuglineerr,gdbwire,lldbout,rpc"
-      - "--accept-multiclient"
-      - "--continue"
+      # - "--log-output=debugger,debuglineerr,gdbwire,lldbout,rpc"
+      # - "--accept-multiclient"
+      # - "--continue"
       - "--api-version=2"
     ports:
-      - "8080:8080"
+      - "3000:3000"
       # delve debug port
       - "4000:4000"
