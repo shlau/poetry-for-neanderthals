@@ -20,8 +20,6 @@ type application struct {
 }
 
 func NewServer(r *chi.Mux, conn db.DbConn) *http.Server {
-	defer conn.Close(context.Background())
-
 	app := application{router: r, games: &models.GameModel{Conn: conn}}
 
 	r.Use(middleware.RequestID)
@@ -51,6 +49,7 @@ func NewServer(r *chi.Mux, conn db.DbConn) *http.Server {
 
 func main() {
 	conn := db.InitDB()
+	defer conn.Close(context.Background())
 	r := chi.NewRouter()
 	server := NewServer(r, conn)
 	server.ListenAndServe()

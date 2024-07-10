@@ -1,14 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/render"
+	"poetry.sheldonlau.com/models"
 )
 
 func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
-	name, team := r.FormValue("name"), r.FormValue("team")
+	var userParams models.User
+	err := json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	name, team := userParams.Name, userParams.Team
+
 	if name == "" || team == "" {
 		app.clientError(w, http.StatusBadRequest)
 		return
@@ -25,10 +34,16 @@ func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) JoinGame(w http.ResponseWriter, r *http.Request) {
-	name, gameIdStr := r.FormValue("name"), r.FormValue("game_id")
-	gameId, err := strconv.Atoi(gameIdStr)
+	var userParams models.User
+	err := json.NewDecoder(r.Body).Decode(&userParams)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
-	if name == "" || gameIdStr == "" || err != nil {
+	name, gameId := userParams.Name, userParams.GameId
+
+	if name == "" || gameId == 0 {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}

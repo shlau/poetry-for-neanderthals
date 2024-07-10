@@ -2,17 +2,15 @@ package models
 
 import (
 	"context"
-	"time"
 
 	"poetry.sheldonlau.com/db"
 )
 
 type User struct {
-	Id        int
-	Name      string
-	Team      string
-	createdAt time.Time
-	GameId    int
+	Id     int
+	Name   string `json:"name" required:"true"`
+	Team   string `json:"team"`
+	GameId int    `json:"gameId" type:"integer"`
 }
 
 type UserModel struct {

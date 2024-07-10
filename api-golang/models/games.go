@@ -62,13 +62,13 @@ func (g *GameModel) Join(username string, gameId int) (User, error) {
 
 	var gameExists bool
 	stmt := `SELECT EXISTS(SELECT true FROM games WHERE id = $1)`
-	err = g.Conn.QueryRow(ctx, stmt).Scan(&gameExists)
+	err = g.Conn.QueryRow(ctx, stmt, gameId).Scan(&gameExists)
 	if err != nil || !gameExists {
 		return User{}, err
 	}
 
 	var userId int
-	stmt = `INSERT INTO users (name, game_id) VALUES($1, $2, $3) RETURNING id`
+	stmt = `INSERT INTO users (name, game_id) VALUES($1, $2) RETURNING id`
 	err = g.Conn.QueryRow(ctx, stmt, username, gameId).Scan(&userId)
 	if err != nil {
 		return User{}, err
