@@ -2,7 +2,21 @@ import InstructionDialog from "../dialogs/instruction-dialog/InstructionDialog";
 import LobbyDialog, {
   LobbyDialogType,
 } from "../dialogs/lobby-dialog/LobbyDialog";
+import { createGame, joinGame } from "../services/api/Games.service";
 import "./Home.less";
+
+const handleCreateGame = (data: { name: string }) => {
+  createGame(data.name);
+};
+
+const handleJoinGame = (data: { name: string; gameId: string }) => {
+  const id = parseInt(data.gameId);
+  if (isNaN(id)) {
+    throw Error("invalid game id");
+  } else {
+    joinGame(data.name, id);
+  }
+};
 
 export default function Home() {
   return (
@@ -12,11 +26,11 @@ export default function Home() {
           <div className="buttons-container">
             <div className="buttons">
               <LobbyDialog
-                onSubmit={() => null}
+                onSubmit={handleCreateGame}
                 dialogType={LobbyDialogType.CREATE}
               ></LobbyDialog>
               <LobbyDialog
-                onSubmit={() => null}
+                onSubmit={handleJoinGame}
                 dialogType={LobbyDialogType.JOIN}
               ></LobbyDialog>
               <InstructionDialog></InstructionDialog>

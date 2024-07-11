@@ -34,7 +34,7 @@ func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) JoinGame(w http.ResponseWriter, r *http.Request) {
-	var userParams models.User
+	userParams := models.User{GameId: -1}
 	err := json.NewDecoder(r.Body).Decode(&userParams)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
@@ -43,7 +43,7 @@ func (app *application) JoinGame(w http.ResponseWriter, r *http.Request) {
 
 	name, gameId := userParams.Name, userParams.GameId
 
-	if name == "" || gameId == 0 {
+	if name == "" || gameId == -1 {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}

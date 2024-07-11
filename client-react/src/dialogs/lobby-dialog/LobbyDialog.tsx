@@ -73,10 +73,10 @@ export default function LobbyDialog({
               autoFocus
               required
               margin="dense"
-              id="lobby-id"
-              name="lobby-id"
+              id="gameId"
+              name="gameId"
               label="Enter Lobby ID:"
-              type="text"
+              type="number"
               fullWidth
               variant="standard"
             />
