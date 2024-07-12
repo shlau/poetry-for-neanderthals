@@ -21,6 +21,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "^/channel/*": {
+        target: "ws://api-golang:3000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

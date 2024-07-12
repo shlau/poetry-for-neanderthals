@@ -16,7 +16,9 @@
     "@emotion/styled": "^11.11.5",
     "@mui/material": "^5.16.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.1",
+    "react-use-websocket": "^4.8.1"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.3.1",

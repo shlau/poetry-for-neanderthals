@@ -1,5 +1,5 @@
 import { MockInstance, beforeEach, describe, expect, it, vi } from "vitest";
-import { createGame, joinGame } from "./Games.service";
+import { createGame, joinGame } from "./GamesService";
 
 describe("Games Service", () => {
   let fetchSpy: MockInstance;

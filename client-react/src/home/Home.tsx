@@ -1,24 +1,28 @@
+import { useNavigate } from "react-router-dom";
 import InstructionDialog from "../dialogs/instruction-dialog/InstructionDialog";
 import LobbyDialog, {
   LobbyDialogType,
 } from "../dialogs/lobby-dialog/LobbyDialog";
-import { createGame, joinGame } from "../services/api/Games.service";
+import { createGame, joinGame } from "../services/api/GamesService";
 import "./Home.less";
-
-const handleCreateGame = (data: { name: string }) => {
-  createGame(data.name);
-};
-
-const handleJoinGame = (data: { name: string; gameId: string }) => {
-  const id = parseInt(data.gameId);
-  if (isNaN(id)) {
-    throw Error("invalid game id");
-  } else {
-    joinGame(data.name, id);
-  }
-};
+import { User } from "../models/User.model";
 
 export default function Home() {
+  const navigate = useNavigate();
+  const handleCreateGame = (data: { name: string }) => {
+    createGame(data.name).then((user: User) => {
+      navigate(`/lobby/${user.gameId}`);
+    });
+  };
+
+  const handleJoinGame = (data: { name: string; gameId: string }) => {
+    const id = parseInt(data.gameId);
+    if (isNaN(id)) {
+      throw Error("invalid game id");
+    } else {
+      joinGame(data.name, id);
+    }
+  };
   return (
     <>
       <div className="homepage">

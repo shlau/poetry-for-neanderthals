@@ -8,7 +8,7 @@ import (
 	"poetry.sheldonlau.com/models"
 )
 
-func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
+func (app *Application) CreateGame(w http.ResponseWriter, r *http.Request) {
 	var userParams models.User
 	err := json.NewDecoder(r.Body).Decode(&userParams)
 	if err != nil {
@@ -33,7 +33,7 @@ func (app *application) CreateGame(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, user)
 }
 
-func (app *application) JoinGame(w http.ResponseWriter, r *http.Request) {
+func (app *Application) JoinGame(w http.ResponseWriter, r *http.Request) {
 	userParams := models.User{GameId: -1}
 	err := json.NewDecoder(r.Body).Decode(&userParams)
 	if err != nil {

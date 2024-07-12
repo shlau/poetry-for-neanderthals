@@ -12,16 +12,17 @@ import (
 	"github.com/go-chi/cors"
 	"poetry.sheldonlau.com/db"
 	"poetry.sheldonlau.com/models"
+	"poetry.sheldonlau.com/websocket"
 )
 
-type application struct {
+type Application struct {
 	router *chi.Mux
 	games  *models.GameModel
 }
 
 func NewServer(r *chi.Mux, conn db.DbConn) *http.Server {
-	app := application{router: r, games: &models.GameModel{Conn: conn}}
-
+	ws := websocket.NewGameSocket()
+	app := Application{router: r, games: &models.GameModel{Conn: conn}}
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
@@ -34,7 +35,8 @@ func NewServer(r *chi.Mux, conn db.DbConn) *http.Server {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
-	r.Mount("/api", app.routes())
+	r.Mount("/api", app.Routes())
+	r.HandleFunc("/channel/{gameId}/ws", ws.UpgradeConnection)
 
 	httpServer := &http.Server{
 		Addr:           fmt.Sprintf(":%s", os.Getenv("SERVER_PORT")),
