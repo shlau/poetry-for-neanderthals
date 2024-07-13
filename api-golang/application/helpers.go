@@ -1,4 +1,4 @@
-package main
+package application
 
 import (
 	"net/http"
@@ -12,7 +12,7 @@ func (app *Application) serverError(w http.ResponseWriter, r *http.Request, err 
 		uri    = r.URL.RequestURI()
 	)
 
-	log.Error(err.Error(), "method", method, "uri", uri)
+	log.Error(err.Error(), ", method", method, ", uri", uri)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 

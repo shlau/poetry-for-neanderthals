@@ -1,4 +1,4 @@
-package main
+package application
 
 import (
 	"encoding/json"
@@ -34,7 +34,7 @@ func (app *Application) CreateGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) JoinGame(w http.ResponseWriter, r *http.Request) {
-	userParams := models.User{GameId: -1}
+	var userParams models.User
 	err := json.NewDecoder(r.Body).Decode(&userParams)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
@@ -43,7 +43,7 @@ func (app *Application) JoinGame(w http.ResponseWriter, r *http.Request) {
 
 	name, gameId := userParams.Name, userParams.GameId
 
-	if name == "" || gameId == -1 {
+	if name == "" || gameId == "" {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
