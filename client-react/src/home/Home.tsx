@@ -11,7 +11,7 @@ export default function Home() {
   const navigate = useNavigate();
   const handleCreateGame = (data: { name: string }) => {
     createGame(data.name).then((user: User) => {
-      navigate(`/lobby/${user.gameId}`);
+      navigate(`/lobby/${user.gameId}`, { state: user });
     });
   };
 

@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.less";
 import Home from "./home/Home";
-import Lobby, { loader as lobbyLoader } from "./lobby/Lobby";
+import Lobby from "./lobby/Lobby";
 
 const router = createBrowserRouter([
   {
@@ -10,7 +10,6 @@ const router = createBrowserRouter([
   },
   {
     path: "/lobby/:lobbyId",
-    loader: lobbyLoader,
     element: <Lobby />,
   },
 ]);
