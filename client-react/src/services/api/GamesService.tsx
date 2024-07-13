@@ -21,7 +21,7 @@ export async function createGame(
   }
 }
 
-export async function joinGame(name: string, gameId: number): Promise<User> {
+export async function joinGame(name: string, gameId: string): Promise<User> {
   try {
     const response = await fetch(`${API_ENDPOINT}/join`, {
       method: "POST",

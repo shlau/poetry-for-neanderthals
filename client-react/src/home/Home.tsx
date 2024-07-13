@@ -16,12 +16,7 @@ export default function Home() {
   };
 
   const handleJoinGame = (data: { name: string; gameId: string }) => {
-    const id = parseInt(data.gameId);
-    if (isNaN(id)) {
-      throw Error("invalid game id");
-    } else {
-      joinGame(data.name, id);
-    }
+    joinGame(data.name, data.gameId);
   };
   return (
     <>
