@@ -5,6 +5,7 @@ go 1.22.2
 require github.com/jackc/pgx/v5 v5.6.0
 
 require (
+	github.com/bobg/go-generics v1.7.2 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect

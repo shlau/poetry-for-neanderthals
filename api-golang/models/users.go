@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -47,8 +46,8 @@ func (u *UserModel) Remove(userId string) error {
 }
 
 func (u *UserModel) UpdateCol(userId string, col string, val any) error {
-	stmt := fmt.Sprintf(`UPDATE users SET %s=$1 WHERE id=$2`, col)
-	_, err := u.Conn.Exec(context.Background(), stmt, val, userId)
+	stmt := `UPDATE users SET $1=$2 WHERE id=$3`
+	_, err := u.Conn.Exec(context.Background(), stmt, col, val, userId)
 	if err != nil {
 		log.Error("Failed to update user column: ", col, ",", err.Error())
 		return err

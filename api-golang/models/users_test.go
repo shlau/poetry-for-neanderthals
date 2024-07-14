@@ -48,8 +48,8 @@ func TestUserModel(t *testing.T) {
 	})
 
 	t.Run("it updates value", func(t *testing.T) {
-		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=$1 WHERE id=$2`)).
-			WithArgs("blue", "1").
+		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET $1=$2 WHERE id=$3`)).
+			WithArgs("team", "blue", "1").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		err := mockUserModel.UpdateCol("1", "team", "blue")
 		if err != nil {

@@ -35,8 +35,8 @@ func TestGameModel(t *testing.T) {
 	})
 
 	t.Run("it updates col", func(t *testing.T) {
-		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET in_progress=$1 WHERE id=$2`)).
-			WithArgs(true, "1").
+		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET $1=$2 WHERE id=$3`)).
+			WithArgs("in_progress", true, "1").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		err := mockGameModel.UpdateCol("1", "in_progress", true)
 
@@ -47,8 +47,8 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it updates multiple cols", func(t *testing.T) {
 		cols := []GameColumn{{name: "blue_score", val: 2}, {name: "red_score", val: 3}}
-		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET blue_score=$1,red_score=$2 WHERE id=1`)).
-			WithArgs(2, 3).
+		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET $1=$2,$3=$4 WHERE id=$5`)).
+			WithArgs("blue_score", 2, "red_score", 3, "1").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		err := mockGameModel.Update("1", cols)
 

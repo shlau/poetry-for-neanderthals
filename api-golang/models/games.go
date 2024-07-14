@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bobg/go-generics/slices"
 	"github.com/jackc/pgx/v5"
 	log "github.com/sirupsen/logrus"
 	"poetry.sheldonlau.com/db"
@@ -135,8 +134,8 @@ func (g *GameModel) Join(username string, gameId string) (User, error) {
 }
 
 func (g *GameModel) UpdateCol(gameId string, col string, val any) error {
-	stmt := fmt.Sprintf(`UPDATE games SET %s=$1 WHERE id=$2`, col)
-	_, err := g.Conn.Exec(context.Background(), stmt, val, gameId)
+	stmt := `UPDATE games SET $1=$2 WHERE id=$3`
+	_, err := g.Conn.Exec(context.Background(), stmt, col, val, gameId)
 	if err != nil {
 		log.Error("Failed to update game column: ", col, ",", err.Error())
 		return err
@@ -150,22 +149,24 @@ func (g *GameModel) Update(gameId string, cols []GameColumn) error {
 
 	sb.WriteString(`UPDATE games SET `)
 	colLen := len(cols)
-	for i, c := range cols {
-		sb.WriteString(fmt.Sprintf(`%s=$%d`, c.name, i+1))
-		if i < colLen-1 {
+	numArgs := colLen * 2
+
+	args := make([]any, numArgs+1)
+	colIdx := 0
+	for i := 0; i < numArgs; i += 2 {
+		sb.WriteString(fmt.Sprintf(`$%d=$%d`, i+1, i+2))
+		if colIdx < colLen-1 {
 			sb.WriteString(`,`)
 		}
-	}
-	sb.WriteString(fmt.Sprintf(` WHERE id=%s`, gameId))
-	vals, err := slices.Map(cols, func(idx int, col GameColumn) (any, error) {
-		return col.val, nil
-	})
-	if err != nil {
-		log.Error("Failed to filter columns: ", err.Error())
-		return err
-	}
 
-	_, err = g.Conn.Exec(context.Background(), sb.String(), vals...)
+		args[i] = cols[colIdx].name
+		args[i+1] = cols[colIdx].val
+		colIdx++
+	}
+	args[numArgs] = gameId
+	sb.WriteString(fmt.Sprintf(` WHERE id=$%d`, numArgs+1))
+
+	_, err := g.Conn.Exec(context.Background(), sb.String(), args...)
 	if err != nil {
 		log.Error("Failed to update game columns: ", err.Error())
 		return err
