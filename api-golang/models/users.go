@@ -2,6 +2,8 @@ package models
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -46,12 +48,17 @@ func (u *UserModel) Remove(userId string) error {
 }
 
 func (u *UserModel) UpdateCol(userId string, col string, val any) error {
-	stmt := `UPDATE users SET $1=$2 WHERE id=$3`
-	_, err := u.Conn.Exec(context.Background(), stmt, col, val, userId)
-	if err != nil {
-		log.Error("Failed to update user column: ", col, ",", err.Error())
-		return err
+	validCols := []string{"ready", "team"}
+	if slices.Contains(validCols, col) {
+		stmt := fmt.Sprintf(`UPDATE users SET %s=$1 WHERE id=$2`, col)
+		_, err := u.Conn.Exec(context.Background(), stmt, val, userId)
+		if err != nil {
+			log.Error("Failed to update user column: ", col, ",", err.Error())
+			return err
+		}
+
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("invalid column for users table %s", col)
 }

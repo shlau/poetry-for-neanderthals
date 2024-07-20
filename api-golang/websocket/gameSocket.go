@@ -31,12 +31,17 @@ func (ws *GameSocket) HandleMessage() {
 	ws.m.HandleMessage(func(s *melody.Session, msg []byte) {
 		message := strings.Split(string(msg), ":")
 
+		if len(message) != 4 {
+			log.Errorf("Invalid message: %s", msg)
+			return
+		}
+
 		table, id, col, val := message[0], message[1], message[2], message[3]
 
 		if table == "users" {
 			err := ws.u.UpdateCol(id, col, val)
 			if err != nil {
-				log.Error("Failed to broadcast, ", err)
+				log.Error("Failed to update user, ", err)
 			} else {
 				ws.m.BroadcastFilter(msg, func(q *melody.Session) bool {
 					return q.Request.URL.Path == s.Request.URL.Path

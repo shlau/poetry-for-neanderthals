@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -14,7 +15,8 @@ import (
 )
 
 type TestServer struct {
-	gs *GameSocket
+	gs       *GameSocket
+	mockConn pgxmock.PgxConnIface
 }
 
 func (ts *TestServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +33,7 @@ func NewTestServer(t testing.TB) *TestServer {
 	g := &models.GameModel{Conn: mockConn}
 
 	gameSocket := NewGameSocket(u, g)
-	return &TestServer{gs: gameSocket}
+	return &TestServer{gs: gameSocket, mockConn: mockConn}
 }
 
 func NewDialer(url string) (*websocket.Conn, error) {
@@ -90,6 +92,36 @@ func TestConnect(t *testing.T) {
 		})
 
 		conn := MustNewDialer(server.URL)
+		conn.ReadMessage()
+		defer conn.Close()
+
+		<-done
+	})
+
+	t.Run("it handles user update message", func(t *testing.T) {
+		done := make(chan bool)
+		ts := NewTestServer(t)
+		msg := `users:1:name:newname`
+
+		server := httptest.NewServer(ts)
+		defer server.Close()
+
+		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET $1=$2 WHERE id=$3`)).
+			WithArgs("name", "newname", "1").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		ts.gs.HandleMessage()
+		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
+			if string(b) != msg {
+				t.Errorf("invalid session data - want: %s, got: %s", msg, string(b))
+			}
+			s.Close()
+		})
+		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
+			close(done)
+		})
+		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
 
