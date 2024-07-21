@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.less";
 import Home from "./home/Home";
-import Lobby from "./lobby/Lobby";
+import GameSession from "./gameSession/GameSession";
 
 const router = createBrowserRouter([
   {
@@ -10,7 +10,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/lobby/:lobbyId",
-    element: <Lobby />,
+    element: <GameSession />,
   },
 ]);
 function App() {

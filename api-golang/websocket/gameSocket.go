@@ -35,28 +35,35 @@ func (ws *GameSocket) Listen() {
 func (ws *GameSocket) HandleMessage() {
 	ws.m.HandleMessage(func(s *melody.Session, msg []byte) {
 		message := strings.Split(string(msg), ":")
+		messageType := message[0]
+		gameId, exists := s.Get("gameId")
 
-		if len(message) != 4 {
-			log.Errorf("Invalid message: %s", msg)
+		if !exists {
+			log.Error("Missing session gameId")
 			return
 		}
 
-		table, id, col, val := message[0], message[1], message[2], message[3]
-
-		if table == "users" {
-			err := ws.u.UpdateCol(id, col, val)
-			if err != nil {
-				log.Error("Failed to update user, ", err)
-			} else {
-				gameId, exists := s.Get("gameId")
-
-				if !exists {
-					log.Error("Missing session gameId")
-					return
-				}
-
-				ws.BroadCastGameUsers(gameId.(string), s)
+		switch messageType {
+		case "echo":
+			gameMessage := GameMessage{Data: "start", Type: "echo"}
+			ws.BroadcastGameMessage(gameMessage, s)
+		case "update":
+			if len(message) != 5 {
+				log.Errorf("Invalid message: %s", msg)
+				return
 			}
+			table, id, col, val := message[1], message[2], message[3], message[4]
+
+			if table == "users" {
+				err := ws.u.UpdateCol(id, col, val)
+				if err != nil {
+					log.Error("Failed to update user, ", err)
+				} else {
+					ws.BroadCastGameUsers(gameId.(string), s)
+				}
+			}
+		default:
+			return
 		}
 	})
 }
@@ -96,16 +103,20 @@ func (ws *GameSocket) BroadcastToChannel(msg []byte, s *melody.Session) {
 	})
 }
 
-func (ws *GameSocket) BroadCastGameUsers(gameId string, s *melody.Session) {
-	users := ws.g.Users(gameId)
-	gameMessage := GameMessage{Data: users, Type: "users"}
+func (ws *GameSocket) BroadcastGameMessage(gameMessage GameMessage, s *melody.Session) {
 	jsonEncoding, err := json.Marshal(gameMessage)
 	if err != nil {
-		log.Error("Failed to encode users data: ", err.Error())
+		log.Error("Failed to game message: ", err.Error())
 		s.Close()
 		return
 	}
 	ws.BroadcastToChannel(jsonEncoding, s)
+}
+
+func (ws *GameSocket) BroadCastGameUsers(gameId string, s *melody.Session) {
+	users := ws.g.Users(gameId)
+	gameMessage := GameMessage{Data: users, Type: "users"}
+	ws.BroadcastGameMessage(gameMessage, s)
 }
 
 func (ws *GameSocket) UpgradeConnection(w http.ResponseWriter, r *http.Request) {

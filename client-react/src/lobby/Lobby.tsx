@@ -1,50 +1,38 @@
-import { useEffect, useState } from "react";
-import useWebSocket from "react-use-websocket";
+import { ReactNode, useState } from "react";
 import "./Lobby.less";
-import { useLocation } from "react-router-dom";
 import { User } from "../models/User.model";
-import { GameMessage } from "../models/GameMessage.model";
 import CheckIcon from "@mui/icons-material/Check";
 import { Button } from "@mui/material";
+import { GameSessionProps } from "../gameSession/GameSession";
 
-export default function Lobby() {
-  const location = useLocation();
-  const currentUser: User = location.state;
-  const socketUrl = `/channel/${currentUser.gameId}/ws?userId=${currentUser.id}&gameId=${currentUser.gameId}&name=${currentUser.name}`;
-  // const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
-  const { sendMessage, lastMessage } = useWebSocket(socketUrl);
+export default function Lobby({
+  sendMessage,
+  users,
+  currentUser,
+}: GameSessionProps) {
   const [ready, setReady] = useState(false);
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    if (lastMessage !== null) {
-      console.log(JSON.parse(lastMessage.data));
-      handleMessage(JSON.parse(lastMessage.data));
-      // setMessageHistory((prev) => prev.concat(lastMessage));
-    }
-  }, [lastMessage]);
+  const canStart = users.filter((user: User) => !user.ready).length === 0;
+  const currentTeam = users.find(
+    (user: User) => user.id === currentUser.id
+  )?.team;
 
   const onReadyPress = () => {
-    sendMessage(`users:${currentUser.id}:ready:${!ready}`);
+    sendMessage(`update:users:${currentUser.id}:ready:${!ready}`);
     setReady((prevState) => !prevState);
   };
 
+  const onGameStart = () => {
+    sendMessage(`echo:start`);
+  };
+
   const joinTeam = (team: string) => {
-    sendMessage(`users:${currentUser.id}:team:${team}`);
+    sendMessage(`update:users:${currentUser.id}:team:${team}`);
   };
 
-  const handleMessage = (message: GameMessage) => {
-    if (message.type && message.data) {
-      switch (message.type) {
-        case "users":
-          setUsers(message.data);
-          break;
-        default:
-      }
-    }
-  };
-
-  const getTeamUsers = (team: string, showCheck: boolean = false) =>
+  const getTeamUsers = (
+    team: string,
+    showCheck: boolean = false
+  ): Iterable<ReactNode> =>
     (users ?? [])
       .filter((user: User) => user.team === team)
       .map((user: User) => {
@@ -86,13 +74,19 @@ export default function Lobby() {
         </div>
       </div>
       <div className="footer">
-        <Button className="start-button hover" variant="contained">
+        <Button
+          onClick={onGameStart}
+          className="start-button hover"
+          variant="contained"
+          disabled={!canStart}
+        >
           Start game
         </Button>
         <Button
           className="ready-button hover"
           variant="contained"
           onClick={onReadyPress}
+          disabled={currentTeam === "unassigned"}
         >
           {ready ? "Unready" : "Ready"}
         </Button>
