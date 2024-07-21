@@ -16,7 +16,9 @@ export default function Home() {
   };
 
   const handleJoinGame = (data: { name: string; gameId: string }) => {
-    joinGame(data.name, data.gameId);
+    joinGame(data.name, data.gameId).then((user: User) => {
+      navigate(`/lobby/${user.gameId}`, { state: user });
+    });
   };
   return (
     <>

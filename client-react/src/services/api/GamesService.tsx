@@ -2,10 +2,7 @@ import { User } from "../../models/User.model";
 
 const API_ENDPOINT = "/api";
 
-export async function createGame(
-  name: string,
-  team: string = "blue"
-): Promise<User> {
+export async function createGame(name: string, team: string = "unassigned"): Promise<User> {
   try {
     const response = await fetch(`${API_ENDPOINT}/games`, {
       method: "POST",

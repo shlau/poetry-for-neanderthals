@@ -3,4 +3,5 @@ export interface User {
   name: string;
   team: string;
   gameId: string;
+  ready: boolean;
 }

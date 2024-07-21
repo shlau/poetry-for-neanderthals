@@ -16,6 +16,11 @@ type GameSocket struct {
 	g *models.GameModel
 }
 
+type GameMessage struct {
+	Data any    `json:"data"`
+	Type string `json:"type"`
+}
+
 func NewGameSocket(users *models.UserModel, games *models.GameModel) *GameSocket {
 	m := melody.New()
 	return &GameSocket{m, users, games}
@@ -43,9 +48,14 @@ func (ws *GameSocket) HandleMessage() {
 			if err != nil {
 				log.Error("Failed to update user, ", err)
 			} else {
-				ws.m.BroadcastFilter(msg, func(q *melody.Session) bool {
-					return q.Request.URL.Path == s.Request.URL.Path
-				})
+				gameId, exists := s.Get("gameId")
+
+				if !exists {
+					log.Error("Missing session gameId")
+					return
+				}
+
+				ws.BroadCastGameUsers(gameId.(string), s)
 			}
 		}
 	})
@@ -68,20 +78,12 @@ func (ws *GameSocket) HandleConnect() {
 	ws.m.HandleConnect(func(s *melody.Session) {
 		gameId := s.Request.FormValue("gameId")
 		userId := s.Request.FormValue("userId")
-		name := s.Request.FormValue("name")
 
 		if gameId != "" && userId != "" {
 			s.Set("gameId", gameId)
 			s.Set("userId", userId)
 
-			user := models.User{Name: name, GameId: gameId, Id: userId}
-			jsonEncoding, err := json.Marshal(user)
-			if err != nil {
-				log.Error("Failed to encode user: ", err.Error())
-				s.Close()
-				return
-			}
-			ws.BroadcastToChannel(jsonEncoding, s)
+			ws.BroadCastGameUsers(gameId, s)
 		} else {
 			s.Close()
 		}
@@ -92,6 +94,18 @@ func (ws *GameSocket) BroadcastToChannel(msg []byte, s *melody.Session) {
 	ws.m.BroadcastFilter(msg, func(q *melody.Session) bool {
 		return q.Request.URL.Path == s.Request.URL.Path
 	})
+}
+
+func (ws *GameSocket) BroadCastGameUsers(gameId string, s *melody.Session) {
+	users := ws.g.Users(gameId)
+	gameMessage := GameMessage{Data: users, Type: "users"}
+	jsonEncoding, err := json.Marshal(gameMessage)
+	if err != nil {
+		log.Error("Failed to encode users data: ", err.Error())
+		s.Close()
+		return
+	}
+	ws.BroadcastToChannel(jsonEncoding, s)
 }
 
 func (ws *GameSocket) UpgradeConnection(w http.ResponseWriter, r *http.Request) {
