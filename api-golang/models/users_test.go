@@ -23,17 +23,17 @@ func TestUserModel(t *testing.T) {
 	defer mockConn.Close(context.Background())
 	t.Run("it creates user", func(t *testing.T) {
 		mockConn.ExpectQuery(regexp.QuoteMeta(`INSERT INTO users (name, team, game_id) VALUES($1, $2, $3) RETURNING id`)).
-			WithArgs("username", "blue", "1").
+			WithArgs("username", "1", "1").
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).
 				AddRow("1"))
 
-		user, err := mockUserModel.Create("username", "blue", "1")
+		user, err := mockUserModel.Create("username", "1", "1")
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
 		}
 
-		if user.Name != "username" || user.Team != "blue" || user.GameId != "1" {
-			t.Errorf("unexpected output want: %s %s %s, got: %s %s %s", "username", "blue", "1", user.Name, user.Team, user.GameId)
+		if user.Name != "username" || user.Team != "1" || user.GameId != "1" {
+			t.Errorf("unexpected output want: %s %s %s, got: %s %s %s", "username", "1", "1", user.Name, user.Team, user.GameId)
 		}
 	})
 
@@ -49,9 +49,9 @@ func TestUserModel(t *testing.T) {
 
 	t.Run("it updates value", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=$1 WHERE id=$2`)).
-			WithArgs("blue", "1").
+			WithArgs("1", "1").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		err := mockUserModel.UpdateCol("1", "team", "blue")
+		err := mockUserModel.UpdateCol("1", "team", "1")
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
 		}

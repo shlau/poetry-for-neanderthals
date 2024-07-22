@@ -1,12 +1,15 @@
-import { User } from "../../models/User.model";
+import { Team, User } from "../../models/User.model";
 
 const API_ENDPOINT = "/api";
 
-export async function createGame(name: string, team: string = "unassigned"): Promise<User> {
+export async function createGame(
+  name: string,
+  team: Team = Team.UNASSIGNED
+): Promise<User> {
   try {
     const response = await fetch(`${API_ENDPOINT}/games`, {
       method: "POST",
-      body: JSON.stringify({ name, team }),
+      body: JSON.stringify({ name, team: team.toString() }),
     });
     if (!response.ok) {
       return Promise.reject(`Response status: ${response.status}`);

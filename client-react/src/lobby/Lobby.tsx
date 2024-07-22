@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import "./Lobby.less";
-import { User } from "../models/User.model";
+import { Team, User } from "../models/User.model";
 import CheckIcon from "@mui/icons-material/Check";
 import { Button } from "@mui/material";
 import { GameSessionProps } from "../gameSession/GameSession";
@@ -21,16 +21,20 @@ export default function Lobby({
     setReady((prevState) => !prevState);
   };
 
+  const onRandomizePress = () => {
+    sendMessage(`randomize`);
+  };
+
   const onGameStart = () => {
     sendMessage(`echo:start`);
   };
 
-  const joinTeam = (team: string) => {
+  const joinTeam = (team: Team) => {
     sendMessage(`update:users:${currentUser.id}:team:${team}`);
   };
 
   const getTeamUsers = (
-    team: string,
+    team: Team,
     showCheck: boolean = false
   ): Iterable<ReactNode> =>
     (users ?? [])
@@ -50,15 +54,18 @@ export default function Lobby({
       <div className="staging-area">
         <div className="staging-container">
           <h1>Lobby - {currentUser.gameId}</h1>
-          <div className="users-container">{getTeamUsers("unassigned")}</div>
+          <div className="users-container">{getTeamUsers(Team.UNASSIGNED)}</div>
         </div>
       </div>
       <div className="teams-container">
         <div className="red-team teams">
           <h1>TEAM 1</h1>
           <div className="users-container">
-            {getTeamUsers("red", true)}
-            <div className="join-button hover" onClick={() => joinTeam("red")}>
+            {getTeamUsers(Team.RED, true)}
+            <div
+              className="join-button hover"
+              onClick={() => joinTeam(Team.RED)}
+            >
               +
             </div>
           </div>
@@ -66,8 +73,11 @@ export default function Lobby({
         <div className="blue-team teams">
           <h1>TEAM 2</h1>
           <div className="users-container">
-            {getTeamUsers("blue", true)}
-            <div className="join-button hover" onClick={() => joinTeam("blue")}>
+            {getTeamUsers(Team.BLUE, true)}
+            <div
+              className="join-button hover"
+              onClick={() => joinTeam(Team.BLUE)}
+            >
               +
             </div>
           </div>
@@ -86,9 +96,16 @@ export default function Lobby({
           className="ready-button hover"
           variant="contained"
           onClick={onReadyPress}
-          disabled={currentTeam === "unassigned"}
+          disabled={currentTeam === Team.UNASSIGNED}
         >
           {ready ? "Unready" : "Ready"}
+        </Button>
+        <Button
+          className="randomize-button hover"
+          variant="contained"
+          onClick={onRandomizePress}
+        >
+          Randomize Teams
         </Button>
       </div>
     </div>

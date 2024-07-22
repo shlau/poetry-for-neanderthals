@@ -11,7 +11,7 @@ CREATE TABLE "games" (
 CREATE TABLE "users" (
     "id" SERIAL PRIMARY KEY,
     "name" varchar,
-    "team" varchar(10) DEFAULT 'unassigned',
+    "team" integer DEFAULT 0,
     "ready" boolean DEFAULT false,
     "created_at" timestamp DEFAULT current_timestamp,
     "game_id" integer

@@ -23,6 +23,17 @@ func TestGameModel(t *testing.T) {
 	mockGameModel, mockConn := NewMockGameModel(t)
 	defer mockConn.Close(context.Background())
 
+	t.Run("it randomizes game teams", func(t *testing.T) {
+		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=ceil(random()*2) WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		err := mockGameModel.RandomizeTeams("1")
+
+		if err != nil {
+			t.Errorf("unexpected error %s", err)
+		}
+	})
+
 	t.Run("it removes game", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM games WHERE id=$1`)).
 			WithArgs("1").
@@ -77,9 +88,9 @@ func TestGameModel(t *testing.T) {
 			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow("1"))
 		mockConn.ExpectQuery(regexp.QuoteMeta("INSERT INTO users (name, team, game_id) VALUES($1, $2, $3) RETURNING id")).
 			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow(2)).
-			WithArgs("username", "blue", "1")
+			WithArgs("username", "1", "1")
 		mockConn.ExpectCommit()
-		_, err := mockGameModel.Create("username", "blue")
+		_, err := mockGameModel.Create("username", "1")
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -89,16 +100,16 @@ func TestGameModel(t *testing.T) {
 	t.Run("it returns all users of a game", func(t *testing.T) {
 		values := [][]any{
 			{
-				"1", "John", "blue", true, "1",
+				"1", "John", "1", true, "1",
 			},
 			{
-				"2", "Jane", "blue", true, "1",
+				"2", "Jane", "1", true, "1",
 			},
 			{
-				"3", "Peter", "red", false, "1",
+				"3", "Peter", "2", false, "1",
 			},
 			{
-				"4", "Emily", "red", false, "1",
+				"4", "Emily", "2", false, "1",
 			},
 		}
 		mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1")).

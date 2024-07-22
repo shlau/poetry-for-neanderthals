@@ -32,6 +32,16 @@ type GameModel struct {
 	Conn db.DbConn
 }
 
+func (g *GameModel) RandomizeTeams(gameId string) error {
+	stmt := `UPDATE users SET team=ceil(random()*2) WHERE game_id=$1`
+	_, err := g.Conn.Exec(context.Background(), stmt, gameId)
+	if err != nil {
+		log.Error("Failed to update game teams: ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (g *GameModel) Users(gameId string) []User {
 	rows, err := g.Conn.Query(context.Background(), "SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1", gameId)
 	if err != nil {

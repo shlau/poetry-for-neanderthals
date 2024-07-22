@@ -18,7 +18,7 @@ func (app *Application) CreateGame(w http.ResponseWriter, r *http.Request) {
 
 	name, team := userParams.Name, userParams.Team
 
-	if name == "" || team == "" {
+	if name == "" {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}

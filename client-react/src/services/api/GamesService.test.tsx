@@ -1,5 +1,6 @@
 import { MockInstance, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGame, joinGame } from "./GamesService";
+import { Team } from "../../models/User.model";
 
 describe("Games Service", () => {
   let fetchSpy: MockInstance;
@@ -11,8 +12,8 @@ describe("Games Service", () => {
   describe("create game", () => {
     it("sends post request with given inputs", () => {
       const name = "name";
-      const team = "red";
-      const jsonBody = JSON.stringify({ name, team });
+      const team = Team.RED;
+      const jsonBody = JSON.stringify({ name, team: "2" });
       createGame(name, team);
       expect(fetchSpy).toHaveBeenCalledWith("/api/games", {
         method: "POST",
@@ -20,9 +21,9 @@ describe("Games Service", () => {
       });
     });
 
-    it("defaults to blue team if no team provided", () => {
+    it("defaults to unassigned if no team provided", () => {
       const name = "name";
-      const jsonBody = JSON.stringify({ name, team: "blue" });
+      const jsonBody = JSON.stringify({ name, team: "0"});
       createGame(name);
       expect(fetchSpy).toHaveBeenCalledWith("/api/games", {
         method: "POST",

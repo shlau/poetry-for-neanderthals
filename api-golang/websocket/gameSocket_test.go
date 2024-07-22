@@ -62,11 +62,11 @@ func TestConnect(t *testing.T) {
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
 			WithArgs("1").
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "blue", false, "1"))
+				AddRow("2", "new name", "1", false, "1"))
 
 		ts.gs.HandleConnect()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
-			want := `{"data":[{"id":"2","name":"new name","team":"blue","ready":false,"gameId":"1"}],"type":"users"}`
+			want := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
 			if string(b) != want {
 				t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
 			}
@@ -106,8 +106,8 @@ func TestConnect(t *testing.T) {
 	t.Run("it handles user update message", func(t *testing.T) {
 		done := make(chan bool)
 		ts := NewTestServer(t)
-		msg := `update:users:1:team:blue`
-		want := `{"data":[{"id":"2","name":"new name","team":"blue","ready":false,"gameId":"1"}],"type":"users"}`
+		msg := `update:users:1:team:1`
+		want := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
 		i := 0
 
 		server := httptest.NewServer(ts)
@@ -117,18 +117,18 @@ func TestConnect(t *testing.T) {
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
 			WithArgs("1").
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "blue", false, "1"))
+				AddRow("2", "new name", "1", false, "1"))
 
 		// update specified user
 		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=$1 WHERE id=$2`)).
-			WithArgs("blue", "1").
+			WithArgs("1", "1").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		// broadcast users on update
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
 			WithArgs("1").
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "blue", false, "1"))
+				AddRow("2", "new name", "1", false, "1"))
 
 		ts.gs.HandleConnect()
 		ts.gs.HandleMessage()
@@ -156,7 +156,7 @@ func TestConnect(t *testing.T) {
 		done := make(chan bool)
 		ts := NewTestServer(t)
 		msg := `echo:start`
-		wantConnect := `{"data":[{"id":"2","name":"new name","team":"blue","ready":false,"gameId":"1"}],"type":"users"}`
+		wantConnect := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
 		wantEcho := `{"data":"start","type":"echo"}`
 		i := 0
 
@@ -166,7 +166,7 @@ func TestConnect(t *testing.T) {
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
 			WithArgs("1").
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "blue", false, "1"))
+				AddRow("2", "new name", "1", false, "1"))
 
 		ts.gs.HandleConnect()
 		ts.gs.HandleMessage()

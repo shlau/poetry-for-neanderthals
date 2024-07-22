@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import Lobby from "./Lobby";
-import { User } from "../models/User.model";
+import { Team, User } from "../models/User.model";
 import "@testing-library/jest-dom";
 
 describe("Lobby", () => {
@@ -42,7 +42,7 @@ describe("Lobby", () => {
       render(
         <Lobby
           sendMessage={sendMessageSpy}
-          users={[{ id: "1", name: "user 1", team: "unassigned" } as User]}
+          users={[{ id: "1", name: "user 1", team: Team.UNASSIGNED } as User]}
           currentUser={currentUser}
         />
       );
@@ -55,7 +55,7 @@ describe("Lobby", () => {
       render(
         <Lobby
           sendMessage={sendMessageSpy}
-          users={[{ id: "1", name: "user 1", team: "blue" } as User]}
+          users={[{ id: "1", name: "user 1", team: Team.BLUE } as User]}
           currentUser={currentUser}
         />
       );
@@ -71,7 +71,7 @@ describe("Lobby", () => {
         <Lobby
           sendMessage={sendMessageSpy}
           users={[
-            { id: "1", name: "user 1", team: "blue", ready: true } as User,
+            { id: "1", name: "user 1", team: Team.BLUE, ready: true } as User,
           ]}
           currentUser={currentUser}
         />
@@ -85,7 +85,7 @@ describe("Lobby", () => {
         <Lobby
           sendMessage={sendMessageSpy}
           users={[
-            { id: "1", name: "user 1", team: "blue", ready: false } as User,
+            { id: "1", name: "user 1", team: Team.BLUE, ready: false } as User,
           ]}
           currentUser={currentUser}
         />

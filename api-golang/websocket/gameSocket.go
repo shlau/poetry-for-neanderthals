@@ -62,6 +62,13 @@ func (ws *GameSocket) HandleMessage() {
 					ws.BroadCastGameUsers(gameId.(string), s)
 				}
 			}
+		case "randomize":
+			err := ws.g.RandomizeTeams(gameId.(string))
+			if err != nil {
+				log.Error("Failed to randomize teams, ", err)
+			} else {
+				ws.BroadCastGameUsers(gameId.(string), s)
+			}
 		default:
 			return
 		}
