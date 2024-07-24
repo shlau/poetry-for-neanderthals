@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -45,7 +46,12 @@ func (ws *GameSocket) HandleMessage() {
 
 		switch messageType {
 		case "echo":
-			gameMessage := GameMessage{Data: "start", Type: "echo"}
+			if len(message) != 2 {
+				log.Errorf("Invalid echo: %s", msg)
+				return
+			}
+
+			gameMessage := GameMessage{Data: message[1], Type: "echo"}
 			ws.BroadcastGameMessage(gameMessage, s)
 		case "update":
 			if len(message) != 5 {
@@ -59,15 +65,34 @@ func (ws *GameSocket) HandleMessage() {
 				if err != nil {
 					log.Error("Failed to update user, ", err)
 				} else {
-					ws.BroadCastGameUsers(gameId.(string), s)
+					ws.BroadcastGameUsers(gameId.(string), s)
 				}
+			}
+		case "score":
+			if len(message) != 3 {
+				log.Errorf("Invalid message: %s", msg)
+				return
+			}
+
+			col, val := message[1], message[2]
+			score, err := ws.g.UpdateScore(gameId.(string), col, val)
+			if err != nil {
+				log.Error("Failed to update score, ", err)
+			} else {
+				teamVal := "1"
+				if val == "red_score" {
+					teamVal = "2"
+				}
+
+				gameMessage := GameMessage{Data: fmt.Sprintf("%s:%s", teamVal, score), Type: "score"}
+				ws.BroadcastGameMessage(gameMessage, s)
 			}
 		case "randomize":
 			err := ws.g.RandomizeTeams(gameId.(string))
 			if err != nil {
 				log.Error("Failed to randomize teams, ", err)
 			} else {
-				ws.BroadCastGameUsers(gameId.(string), s)
+				ws.BroadcastGameUsers(gameId.(string), s)
 			}
 		default:
 			return
@@ -97,7 +122,7 @@ func (ws *GameSocket) HandleConnect() {
 			s.Set("gameId", gameId)
 			s.Set("userId", userId)
 
-			ws.BroadCastGameUsers(gameId, s)
+			ws.BroadcastGameUsers(gameId, s)
 		} else {
 			s.Close()
 		}
@@ -120,7 +145,7 @@ func (ws *GameSocket) BroadcastGameMessage(gameMessage GameMessage, s *melody.Se
 	ws.BroadcastToChannel(jsonEncoding, s)
 }
 
-func (ws *GameSocket) BroadCastGameUsers(gameId string, s *melody.Session) {
+func (ws *GameSocket) BroadcastGameUsers(gameId string, s *melody.Session) {
 	users := ws.g.Users(gameId)
 	gameMessage := GameMessage{Data: users, Type: "users"}
 	ws.BroadcastGameMessage(gameMessage, s)

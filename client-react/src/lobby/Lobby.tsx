@@ -3,18 +3,11 @@ import "./Lobby.less";
 import { Team, User } from "../models/User.model";
 import CheckIcon from "@mui/icons-material/Check";
 import { Button } from "@mui/material";
-import { GameSessionProps } from "../gameSession/GameSession";
+import { LobbyProps } from "../gameSession/GameSession";
 
-export default function Lobby({
-  sendMessage,
-  users,
-  currentUser,
-}: GameSessionProps) {
+export default function Lobby({ sendMessage, users, currentUser }: LobbyProps) {
   const [ready, setReady] = useState(false);
   const canStart = users.filter((user: User) => !user.ready).length === 0;
-  const currentTeam = users.find(
-    (user: User) => user.id === currentUser.id
-  )?.team;
 
   const onReadyPress = () => {
     sendMessage(`update:users:${currentUser.id}:ready:${!ready}`);
@@ -96,7 +89,7 @@ export default function Lobby({
           className="ready-button hover"
           variant="contained"
           onClick={onReadyPress}
-          disabled={currentTeam === Team.UNASSIGNED}
+          disabled={currentUser.team === Team.UNASSIGNED}
         >
           {ready ? "Unready" : "Ready"}
         </Button>

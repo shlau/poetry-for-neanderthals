@@ -1,17 +1,17 @@
 import { ReactNode } from "react";
-import { GameSessionProps } from "../gameSession/GameSession";
+import { GameProps } from "../gameSession/GameSession";
 // import { GameMessage } from "../models/GameMessage.model";
 import { Team, User } from "../models/User.model";
 import "./Game.less";
 import { Button } from "@mui/material";
 
 export default function Game({
-  // sendMessage,
+  sendMessage,
   users,
   currentUser,
-}: GameSessionProps) {
-  const redScore = 0;
-  const blueScore = 0;
+  blueScore,
+  redScore,
+}: GameProps) {
   const poet = { id: "0", name: "poetName", team: Team.BLUE };
   const isPoet = true;
   const roundInProgress = true;
@@ -20,6 +20,16 @@ export default function Game({
   const currentWord = { easy: "test easy word", hard: "test hard word" };
   const minutes = 1;
   const seconds = 10;
+
+  const startRound = () => {};
+  const pauseResumeRound = () => {};
+  const updateScore = (amount: number) => {
+    const col = currentUser.team === Team.BLUE ? "blue_score" : "red_score";
+    sendMessage(`score:${col}:${amount}`);
+  };
+  const skipWord = () => {};
+  const bonkPoet = () => {};
+
   const getTeamUsers = (team: Team): Iterable<ReactNode> =>
     (users ?? [])
       .filter((user: User) => user.team === team)
@@ -32,11 +42,6 @@ export default function Game({
           </div>
         );
       });
-  const startRound = () => {};
-  const pauseResumeRound = () => {};
-  const updateScore = (amount: number) => {};
-  const skipWord = () => {};
-  const bonkPoet = () => {};
 
   return (
     <div className="gamepage">
