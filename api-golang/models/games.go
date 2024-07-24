@@ -146,6 +146,23 @@ func (g *GameModel) Join(username string, gameId string) (User, error) {
 	return User{Name: username, Id: userId, GameId: gameId}, nil
 }
 
+func (g *GameModel) UpdateScore(gameId string, col string, val string) (string, error) {
+	validCols := []string{"red_score", "blue_score"}
+	if slices.Contains(validCols, col) {
+		var updatedScore string
+		stmt := fmt.Sprintf(`UPDATE games SET %s=%s+$1 WHERE id=$2 RETURNING %s`, col, col, col)
+		err := g.Conn.QueryRow(context.Background(), stmt, val, gameId).Scan(&updatedScore)
+		if err != nil {
+			log.Error("Failed to update game score: ", err.Error())
+			return "", err
+		}
+
+		return updatedScore, nil
+	}
+
+	return "", fmt.Errorf("invalid column for score update %s", col)
+}
+
 func (g *GameModel) UpdateCol(gameId string, col string, val any) error {
 	validCols := []string{"in_progress", "red_score", "blue_score", "poet_idx"}
 	if slices.Contains(validCols, col) {

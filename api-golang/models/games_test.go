@@ -56,6 +56,21 @@ func TestGameModel(t *testing.T) {
 		}
 	})
 
+	t.Run("it updates score", func(t *testing.T) {
+		mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_score=blue_score+$1 WHERE id=$2 RETURNING blue_score`)).WillReturnRows(mockConn.NewRows([]string{"blue_score"}).
+			AddRow("3")).WithArgs("3").
+			WithArgs("2", "1")
+		score, err := mockGameModel.UpdateScore("1", "blue_score", "2")
+
+		if err != nil {
+			t.Errorf("unexpected error %s", err)
+		}
+
+		if score != "3" {
+			t.Errorf("incorrect score, want %s, got %s", "3", score)
+		}
+	})
+
 	t.Run("it updates multiple cols", func(t *testing.T) {
 		cols := []GameColumn{{name: "blue_score", val: 2}, {name: "red_score", val: 3}}
 		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET blue_score=$1,red_score=$2 WHERE id=1`)).
