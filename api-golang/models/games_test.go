@@ -34,6 +34,23 @@ func TestGameModel(t *testing.T) {
 		}
 	})
 
+	// t.Run("it removes and returns random word", func(t *testing.T) {
+	// 	word := Word{Easy: "easy word", Hard: "hard word"}
+	// 	words := []Word{word}
+	// 	b, err := json.Marshal(words)
+	// 	if err != nil {
+	// 		t.Errorf("unexpected error while encoding: %s", err)
+	// 	}
+	// 	mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT words FROM games WHERE id=$1`)).
+	// 		WillReturnRows(mockConn.NewRows([]string{"words"}).
+	// 			AddRow(b)).
+	// 		WithArgs("1")
+	// 	mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET words=$1 WHERE id=$2`)).
+	// 		WithArgs("'[]'", "1").
+	// 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	// 	mockGameModel.NextWord("1")
+	// })
+
 	t.Run("it removes game", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM games WHERE id=$1`)).
 			WithArgs("1").
@@ -58,7 +75,7 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it updates score", func(t *testing.T) {
 		mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_score=blue_score+$1 WHERE id=$2 RETURNING blue_score`)).WillReturnRows(mockConn.NewRows([]string{"blue_score"}).
-			AddRow("3")).WithArgs("3").
+			AddRow("3")).
 			WithArgs("2", "1")
 		score, err := mockGameModel.UpdateScore("1", "blue_score", "2")
 

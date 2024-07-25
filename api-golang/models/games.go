@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"math/rand"
+
 	genericSlices "github.com/bobg/go-generics/slices"
 
 	"github.com/jackc/pgx/v5"
@@ -19,17 +21,53 @@ type GameColumn struct {
 	val  any
 }
 
+type Word struct {
+	Easy string `json:"easy"`
+	Hard string `json:"hard"`
+}
 type Game struct {
 	Id         string `json:"id"`
 	InProgress bool   `json:"inProgress"`
 	createdAt  time.Time
 	poetIdx    int
-	RedScore   int `json: "redScore"`
-	BlueScore  int `json: "blueScore"`
+	RedScore   int    `json: "redScore"`
+	BlueScore  int    `json: "blueScore"`
+	Words      []Word `json:"words"`
 }
 
 type GameModel struct {
 	Conn db.DbConn
+}
+
+func (g *GameModel) NextWord(gameId string) (Word, error) {
+
+	game := new(Game)
+	stmt := `SELECT words FROM games WHERE id=$1`
+	err := g.Conn.QueryRow(context.Background(), stmt, gameId).Scan(&game.Words)
+
+	if err != nil {
+		log.Error("Failed to get words: ", err.Error())
+		return Word{}, err
+	}
+
+	numWords := len(game.Words)
+	if numWords > 0 {
+		index := rand.Intn(numWords)
+		word := game.Words[index]
+		updatedWords := slices.Delete(game.Words, index, index+1)
+		stmt = `UPDATE games SET words=$1 WHERE id=$2`
+		_, err = g.Conn.Exec(context.Background(), stmt, updatedWords, gameId)
+
+		if err != nil {
+			log.Error("Failed to update words: ", err.Error())
+			return Word{}, err
+		}
+
+		return word, nil
+	}
+
+	log.Error("Out of words")
+	return Word{}, fmt.Errorf("all words have been played")
 }
 
 func (g *GameModel) RandomizeTeams(gameId string) error {
