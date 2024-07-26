@@ -34,6 +34,7 @@ func TestGameModel(t *testing.T) {
 		}
 	})
 
+	// TODO: pgxmock doesn't decode json? Alternatives to unit testing jsonb col
 	// t.Run("it removes and returns random word", func(t *testing.T) {
 	// 	word := Word{Easy: "easy word", Hard: "hard word"}
 	// 	words := []Word{word}

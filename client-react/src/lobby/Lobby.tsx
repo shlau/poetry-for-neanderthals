@@ -19,7 +19,7 @@ export default function Lobby({ sendMessage, users, currentUser }: LobbyProps) {
   };
 
   const onGameStart = () => {
-    sendMessage(`echo:start`);
+    sendMessage(`echo:startGame`);
   };
 
   const joinTeam = (team: Team) => {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/olahol/melody"
@@ -80,7 +81,7 @@ func (ws *GameSocket) HandleMessage() {
 				log.Error("Failed to update score, ", err)
 			} else {
 				teamVal := "1"
-				if val == "red_score" {
+				if col == "red_score" {
 					teamVal = "2"
 				}
 
@@ -93,6 +94,19 @@ func (ws *GameSocket) HandleMessage() {
 				log.Error("Failed to randomize teams, ", err)
 			} else {
 				ws.BroadcastGameUsers(gameId.(string), s)
+			}
+		case "resumeRound":
+			if len(message) != 2 {
+				log.Errorf("Invalid message: %s", msg)
+				return
+			}
+			duration := message[1]
+			i, err := strconv.Atoi(duration)
+			if err != nil {
+				log.Errorf("Unable to parse duration: %s", duration)
+			} else {
+				gameMessage := GameMessage{Data: i, Type: "resumeRound"}
+				ws.BroadcastGameMessage(gameMessage, s)
 			}
 		default:
 			return

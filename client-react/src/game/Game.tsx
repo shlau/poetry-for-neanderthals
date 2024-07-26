@@ -1,6 +1,5 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { GameProps } from "../gameSession/GameSession";
-// import { GameMessage } from "../models/GameMessage.model";
 import { Team, User } from "../models/User.model";
 import "./Game.less";
 import { Button } from "@mui/material";
@@ -11,18 +10,32 @@ export default function Game({
   currentUser,
   blueScore,
   redScore,
+  roundInProgress,
+  duration,
 }: GameProps) {
+  const [roundPaused, setRoundPaused] = useState(false);
   const poet = { id: "0", name: "poetName", team: Team.BLUE };
   const isPoet = true;
-  const roundInProgress = true;
-  const roundPaused = false;
   const gameOver = false;
   const currentWord = { easy: "test easy word", hard: "test hard word" };
-  const minutes = 1;
-  const seconds = 10;
+  const numSeconds = Math.abs(Math.ceil(duration / 1000));
+  const minutes = Math.floor(numSeconds / 60);
+  const seconds = numSeconds % 60;
 
-  const startRound = () => {};
-  const pauseResumeRound = () => {};
+  const startRound = () => {
+    sendMessage(`echo:startRound`);
+  };
+  const pauseResumeRound = () => {
+    let message = "";
+    if (roundPaused) {
+      message = `resumeRound:${duration}`;
+    } else {
+      message = "echo:pauseRound";
+    }
+    setRoundPaused((prevState) => !prevState);
+    sendMessage(message);
+  };
+
   const updateScore = (amount: number) => {
     const col = currentUser.team === Team.BLUE ? "blue_score" : "red_score";
     sendMessage(`score:${col}:${amount}`);

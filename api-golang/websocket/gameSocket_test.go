@@ -196,4 +196,84 @@ func TestConnect(t *testing.T) {
 
 		<-done
 	})
+
+	t.Run("it handles resume round", func(t *testing.T) {
+		done := make(chan bool)
+		ts := NewTestServer(t)
+		msg := `resumeRound:10`
+		want := `{"data":10,"type":"resumeRound"}`
+		i := 0
+
+		server := httptest.NewServer(ts)
+		defer server.Close()
+
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRow("2", "new name", "1", false, "1"))
+
+		ts.gs.HandleConnect()
+		ts.gs.HandleMessage()
+		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
+			if i == 1 {
+				if string(b) != want {
+					t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
+				}
+				s.Close()
+			}
+
+			i++
+		})
+		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
+			close(done)
+		})
+		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.ReadMessage()
+		defer conn.Close()
+
+		<-done
+	})
+
+	t.Run("it handles score change", func(t *testing.T) {
+		done := make(chan bool)
+		ts := NewTestServer(t)
+		msg := `score:red_score:3`
+		want := `{"data":"2:4","type":"score"}`
+		i := 0
+
+		server := httptest.NewServer(ts)
+		defer server.Close()
+
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRow("2", "new name", "1", false, "1"))
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET red_score=red_score+$1 WHERE id=$2 RETURNING red_score`)).
+			WillReturnRows(ts.mockConn.NewRows([]string{"red_score"}).
+				AddRow("4")).
+			WithArgs("3", "1")
+
+		ts.gs.HandleConnect()
+		ts.gs.HandleMessage()
+		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
+			if i == 1 {
+				if string(b) != want {
+					t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
+				}
+				s.Close()
+			}
+
+			i++
+		})
+		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
+			close(done)
+		})
+		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.ReadMessage()
+		defer conn.Close()
+
+		<-done
+	})
 }
