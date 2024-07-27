@@ -15,6 +15,7 @@ export interface GameProps {
   blueScore: string;
   roundInProgress: boolean;
   duration: number;
+  poet: User | undefined;
 }
 
 export interface LobbyProps {
@@ -50,7 +51,7 @@ export default function GameSession() {
       if (newDuration <= 0) {
         clearInterval(ref.current.id);
         if (currentUser.id === poet?.id) {
-          sendMessage(`echo:endRound`);
+          sendMessage(`endRound:${poet.team}`);
         }
       }
     }, 1000);
@@ -91,6 +92,9 @@ export default function GameSession() {
           setDuration(newDuration);
           startTimer();
           break;
+        case "poetChange":
+          setPoetId(message.data);
+          break;
         default:
       }
     }
@@ -121,6 +125,7 @@ export default function GameSession() {
       blueScore={blueScore}
       roundInProgress={roundInProgress}
       duration={duration}
+      poet={poet}
     />
   ) : (
     <Lobby sendMessage={sendMessage} users={users} currentUser={currentUser} />

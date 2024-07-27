@@ -4,13 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
+
+	genericSlices "github.com/bobg/go-generics/slices"
 
 	"github.com/olahol/melody"
 	log "github.com/sirupsen/logrus"
 	"poetry.sheldonlau.com/models"
 )
+
+const BLUE_TEAM = "1"
+const RED_TEAM = "2"
 
 type GameSocket struct {
 	m *melody.Melody
@@ -34,6 +40,11 @@ func (ws *GameSocket) Listen() {
 	ws.HandleDisconnect()
 }
 
+func (ws *GameSocket) echoMessage(message string, s *melody.Session) {
+	gameMessage := GameMessage{Data: message, Type: "echo"}
+	ws.BroadcastGameMessage(gameMessage, s)
+}
+
 func (ws *GameSocket) HandleMessage() {
 	ws.m.HandleMessage(func(s *melody.Session, msg []byte) {
 		message := strings.Split(string(msg), ":")
@@ -51,9 +62,7 @@ func (ws *GameSocket) HandleMessage() {
 				log.Errorf("Invalid echo: %s", msg)
 				return
 			}
-
-			gameMessage := GameMessage{Data: message[1], Type: "echo"}
-			ws.BroadcastGameMessage(gameMessage, s)
+			ws.echoMessage(message[1], s)
 		case "update":
 			if len(message) != 5 {
 				log.Errorf("Invalid message: %s", msg)
@@ -76,13 +85,13 @@ func (ws *GameSocket) HandleMessage() {
 			}
 
 			col, val := message[1], message[2]
-			score, err := ws.g.UpdateScore(gameId.(string), col, val)
+			score, err := ws.g.IncreaseValue(gameId.(string), col, val)
 			if err != nil {
 				log.Error("Failed to update score, ", err)
 			} else {
-				teamVal := "1"
+				teamVal := BLUE_TEAM
 				if col == "red_score" {
-					teamVal = "2"
+					teamVal = RED_TEAM
 				}
 
 				gameMessage := GameMessage{Data: fmt.Sprintf("%s:%s", teamVal, score), Type: "score"}
@@ -108,10 +117,83 @@ func (ws *GameSocket) HandleMessage() {
 				gameMessage := GameMessage{Data: i, Type: "resumeRound"}
 				ws.BroadcastGameMessage(gameMessage, s)
 			}
+		case "startGame":
+			ws.echoMessage("startGame", s)
+
+			users := ws.g.Users(gameId.(string))
+			idx := slices.IndexFunc(users, func(u models.User) bool { return u.Team == BLUE_TEAM })
+			if idx != -1 {
+				poetId := users[idx].Id
+				gameMessage := GameMessage{Data: poetId, Type: "poetChange"}
+				ws.BroadcastGameMessage(gameMessage, s)
+			} else {
+				log.Error("Poet not found at game start")
+			}
+		case "endRound":
+			if len(message) != 2 {
+				log.Errorf("Invalid message: %s", msg)
+				return
+			}
+			ws.SwitchPoet(gameId.(string), message[1], s)
 		default:
 			return
 		}
 	})
+}
+
+func (ws *GameSocket) EndGame(gameId string) {
+	ws.g.Reset(gameId)
+}
+
+func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Session) {
+	users := ws.g.Users(gameId)
+	redUsers, err := genericSlices.Filter(users, func(user models.User) (bool, error) {
+		return user.Team == RED_TEAM, nil
+	})
+	if err != nil {
+		log.Error("Failed to filter red users: ", err.Error())
+		return
+	}
+	blueUsers, err := genericSlices.Filter(users, func(user models.User) (bool, error) {
+		return user.Team == BLUE_TEAM, nil
+	})
+	if err != nil {
+		log.Error("Failed to filter blue users", err.Error())
+		return
+	}
+	numRounds := max(len(redUsers), len(blueUsers))
+
+	game, err := ws.g.Get(gameId)
+	if game.RedPoetIdx >= numRounds*2 {
+		ws.EndGame(gameId)
+		return
+	}
+
+	if err != nil {
+		log.Error("Failed to get game for poet switch: ", err.Error())
+		return
+	}
+
+	col := ""
+	nextPoet := users[0]
+	if currentTeam == BLUE_TEAM {
+		col = "blue_poet_idx"
+		redIdx := game.RedPoetIdx
+		nextPoet = redUsers[redIdx%len(redUsers)]
+	} else {
+		col = "red_poet_idx"
+		blueIdx := game.BluePoetIdx
+		nextPoet = blueUsers[blueIdx%len(blueUsers)]
+	}
+
+	_, err = ws.g.IncreaseValue(gameId, col, "1")
+	if err != nil {
+		log.Error("Failed to increase poet idx: ", err.Error())
+		return
+	}
+
+	gameMessage := GameMessage{Data: nextPoet.Id, Type: "poetChange"}
+	ws.BroadcastGameMessage(gameMessage, s)
 }
 
 func (ws *GameSocket) HandleDisconnect() {

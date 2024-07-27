@@ -12,9 +12,9 @@ export default function Game({
   redScore,
   roundInProgress,
   duration,
+  poet,
 }: GameProps) {
   const [roundPaused, setRoundPaused] = useState(false);
-  const poet = { id: "0", name: "poetName", team: Team.BLUE };
   const isPoet = true;
   const gameOver = false;
   const currentWord = { easy: "test easy word", hard: "test hard word" };
@@ -51,7 +51,7 @@ export default function Game({
           <div className="user-container" key={user.id}>
             <span className="username">{user.name}</span>
             {user.id === currentUser.id && <span>(YOU)</span>}
-            {user.id === poet.id && <span>--(POET)</span>}
+            {user.id === poet?.id && <span>--(POET)</span>}
           </div>
         );
       });

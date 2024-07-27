@@ -17,8 +17,8 @@ import (
 )
 
 type GameColumn struct {
-	name string
-	val  any
+	Name string
+	Val  any
 }
 
 type Word struct {
@@ -26,17 +26,31 @@ type Word struct {
 	Hard string `json:"hard"`
 }
 type Game struct {
-	Id         string `json:"id"`
-	InProgress bool   `json:"inProgress"`
-	createdAt  time.Time
-	poetIdx    int
-	RedScore   int    `json: "redScore"`
-	BlueScore  int    `json: "blueScore"`
-	Words      []Word `json:"words"`
+	Id          string `json:"id"`
+	InProgress  bool   `json:"inProgress"`
+	createdAt   time.Time
+	RedPoetIdx  int
+	BluePoetIdx int
+	RedScore    int    `json: "redScore"`
+	BlueScore   int    `json: "blueScore"`
+	Words       []Word `json:"words"`
 }
 
 type GameModel struct {
 	Conn db.DbConn
+}
+
+func (g *GameModel) Get(gameId string) (*Game, error) {
+	game := new(Game)
+	stmt := `SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1`
+	err := g.Conn.QueryRow(context.Background(), stmt, gameId).Scan(&game.RedPoetIdx, game.BluePoetIdx, game.RedScore, game.BlueScore)
+
+	if err != nil {
+		log.Error("Failed to get game: ", err.Error())
+		return game, err
+	}
+
+	return game, nil
 }
 
 func (g *GameModel) NextWord(gameId string) (Word, error) {
@@ -81,7 +95,7 @@ func (g *GameModel) RandomizeTeams(gameId string) error {
 }
 
 func (g *GameModel) Users(gameId string) []User {
-	rows, err := g.Conn.Query(context.Background(), "SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1", gameId)
+	rows, err := g.Conn.Query(context.Background(), "SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY name", gameId)
 	if err != nil {
 		log.Fatal(err)
 		return []User{}
@@ -184,18 +198,18 @@ func (g *GameModel) Join(username string, gameId string) (User, error) {
 	return User{Name: username, Id: userId, GameId: gameId}, nil
 }
 
-func (g *GameModel) UpdateScore(gameId string, col string, val string) (string, error) {
-	validCols := []string{"red_score", "blue_score"}
+func (g *GameModel) IncreaseValue(gameId string, col string, val string) (string, error) {
+	validCols := []string{"red_score", "blue_score", "red_poet_idx", "blue_poet_idx"}
 	if slices.Contains(validCols, col) {
-		var updatedScore string
+		var updatedValue string
 		stmt := fmt.Sprintf(`UPDATE games SET %s=%s+$1 WHERE id=$2 RETURNING %s`, col, col, col)
-		err := g.Conn.QueryRow(context.Background(), stmt, val, gameId).Scan(&updatedScore)
+		err := g.Conn.QueryRow(context.Background(), stmt, val, gameId).Scan(&updatedValue)
 		if err != nil {
-			log.Error("Failed to update game score: ", err.Error())
+			log.Error("Failed to increase game value: ", err.Error())
 			return "", err
 		}
 
-		return updatedScore, nil
+		return updatedValue, nil
 	}
 
 	return "", fmt.Errorf("invalid column for score update %s", col)
@@ -223,14 +237,14 @@ func (g *GameModel) Update(gameId string, cols []GameColumn) error {
 	sb.WriteString(`UPDATE games SET `)
 	colLen := len(cols)
 	for i, c := range cols {
-		sb.WriteString(fmt.Sprintf(`%s=$%d`, c.name, i+1))
+		sb.WriteString(fmt.Sprintf(`%s=$%d`, c.Name, i+1))
 		if i < colLen-1 {
 			sb.WriteString(`,`)
 		}
 	}
 	sb.WriteString(fmt.Sprintf(` WHERE id=%s`, gameId))
 	vals, err := genericSlices.Map(cols, func(idx int, col GameColumn) (any, error) {
-		return col.val, nil
+		return col.Val, nil
 	})
 	if err != nil {
 		log.Error("Failed to filter columns: ", err.Error())
@@ -240,6 +254,17 @@ func (g *GameModel) Update(gameId string, cols []GameColumn) error {
 	_, err = g.Conn.Exec(context.Background(), sb.String(), vals...)
 	if err != nil {
 		log.Error("Failed to update game columns: ", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (g *GameModel) Reset(gameId string) error {
+	stmt := `UPDATE games SET red_poet_idx=DEFAULT,blue_poet_idx=DEFAULT,blue_score=DEFAULT,red_score=DEFAULT,in_progress=DEFAULT,words=DEFAULT WHERE id=$1`
+	_, err := g.Conn.Exec(context.Background(), stmt, gameId)
+	if err != nil {
+		log.Error("Failed to reset game columns: ", err.Error())
 		return err
 	}
 
