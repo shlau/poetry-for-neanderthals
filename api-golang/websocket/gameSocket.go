@@ -129,6 +129,15 @@ func (ws *GameSocket) HandleMessage() {
 			} else {
 				log.Error("Poet not found at game start")
 			}
+		case "startRound":
+			word, err := ws.g.NextWord(gameId.(string))
+			if err != nil {
+				log.Error("Failed to get next word at round start")
+			} else {
+				gameMessage := GameMessage{Data: word, Type: "wordUpdate"}
+				ws.BroadcastGameMessage(gameMessage, s)
+				ws.echoMessage("startRound", s)
+			}
 		case "endRound":
 			if len(message) != 2 {
 				log.Errorf("Invalid message: %s", msg)

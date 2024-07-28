@@ -13,17 +13,17 @@ export default function Game({
   roundInProgress,
   duration,
   poet,
+  word,
 }: GameProps) {
   const [roundPaused, setRoundPaused] = useState(false);
-  const isPoet = true;
+  const isPoet = poet?.id === currentUser.id;
   const gameOver = false;
-  const currentWord = { easy: "test easy word", hard: "test hard word" };
   const numSeconds = Math.abs(Math.ceil(duration / 1000));
   const minutes = Math.floor(numSeconds / 60);
   const seconds = numSeconds % 60;
 
   const startRound = () => {
-    sendMessage(`echo:startRound`);
+    sendMessage(`startRound`);
   };
   const pauseResumeRound = () => {
     let message = "";
@@ -92,16 +92,12 @@ export default function Game({
                   <div className="word-value">
                     <span>1</span>
                   </div>
-                  <span className="word-text easy-word-text">
-                    {currentWord.easy}
-                  </span>
+                  <span className="word-text easy-word-text">{word.easy}</span>
                 </div>
               </div>
               <div className="word-container hard-word-container">
                 <div className="word-wrapper hard-word-wrapper">
-                  <span className="word-text hard-word-text">
-                    {currentWord.hard}
-                  </span>
+                  <span className="word-text hard-word-text">{word.hard}</span>
                   <div className="word-value">
                     <span>3</span>
                   </div>

@@ -157,4 +157,14 @@ func TestGameModel(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("it resets the game", func(t *testing.T) {
+		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET red_poet_idx=DEFAULT,blue_poet_idx=DEFAULT,blue_score=DEFAULT,red_score=DEFAULT,in_progress=DEFAULT,words=DEFAULT WHERE id=$1`)).
+			WithArgs("1").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		err := mockGameModel.Reset("1")
+		if err != nil {
+			t.Errorf("unexpected error %s", err)
+		}
+	})
 }

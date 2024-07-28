@@ -43,7 +43,8 @@ type GameModel struct {
 func (g *GameModel) Get(gameId string) (*Game, error) {
 	game := new(Game)
 	stmt := `SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1`
-	err := g.Conn.QueryRow(context.Background(), stmt, gameId).Scan(&game.RedPoetIdx, game.BluePoetIdx, game.RedScore, game.BlueScore)
+	err := g.Conn.QueryRow(context.Background(), stmt, gameId).
+		Scan(&game.RedPoetIdx, &game.BluePoetIdx, &game.RedScore, &game.BlueScore, &game.InProgress)
 
 	if err != nil {
 		log.Error("Failed to get game: ", err.Error())

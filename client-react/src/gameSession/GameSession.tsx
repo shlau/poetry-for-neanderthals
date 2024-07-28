@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
 import { Team, User } from "../models/User.model";
-import { GameMessage } from "../models/GameMessage.model";
+import { GameMessage, Word } from "../models/Game.model";
 import Game from "../game/Game";
 import Lobby from "../lobby/Lobby";
 
@@ -16,6 +16,7 @@ export interface GameProps {
   roundInProgress: boolean;
   duration: number;
   poet: User | undefined;
+  word: Word;
 }
 
 export interface LobbyProps {
@@ -30,7 +31,7 @@ export default function GameSession() {
   const [redScore, setRedScore] = useState("0");
   const [blueScore, setBlueScore] = useState("0");
   const [poetId, setPoetId] = useState("");
-
+  const [word, setWord] = useState({ easy: "", hard: "" });
   const ref = useRef({ id: 0, endTime: Date.now() });
   const [duration, setDuration] = useState(ROUND_DURATION_MILLIS);
   const [roundInProgress, setRoundInProgress] = useState(false);
@@ -50,6 +51,7 @@ export default function GameSession() {
       setDuration(newDuration);
       if (newDuration <= 0) {
         clearInterval(ref.current.id);
+        setRoundInProgress(false);
         if (currentUser.id === poet?.id) {
           sendMessage(`endRound:${poet.team}`);
         }
@@ -95,6 +97,9 @@ export default function GameSession() {
         case "poetChange":
           setPoetId(message.data);
           break;
+        case "wordUpdate":
+          setWord(message.data);
+          break;
         default:
       }
     }
@@ -126,6 +131,7 @@ export default function GameSession() {
       roundInProgress={roundInProgress}
       duration={duration}
       poet={poet}
+      word={word}
     />
   ) : (
     <Lobby sendMessage={sendMessage} users={users} currentUser={currentUser} />
