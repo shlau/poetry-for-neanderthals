@@ -119,6 +119,7 @@ func (ws *GameSocket) HandleMessage() {
 			}
 		case "startGame":
 			ws.echoMessage("startGame", s)
+			ws.g.UpdateCol(gameId.(string), "in_progress", true)
 
 			users := ws.g.Users(gameId.(string))
 			idx := slices.IndexFunc(users, func(u models.User) bool { return u.Team == BLUE_TEAM })
@@ -210,11 +211,16 @@ func (ws *GameSocket) HandleDisconnect() {
 		userId, exists := s.Get("userId")
 		if !exists {
 			log.Errorf("Disconnected user does not exist id: %s", userId)
-		} else {
-			ws.u.Remove(userId.(string))
+			return
+		}
+		gameId, exists := s.Get("gameId")
+		if !exists {
+			log.Errorf("Game does not exist id: %s", userId)
+			return
 		}
 
-		// TODO remove game if no users exist
+		log.Printf("Removed user: %s", userId)
+		ws.u.Remove(userId.(string), gameId.(string))
 	})
 }
 
