@@ -50,8 +50,7 @@ export default function GameSession() {
     currentUserData;
 
   if (!currentUser?.gameId) {
-    navigate(`/`);
-    return;
+    return <div>Unauthorized</div>;
   }
 
   const poet: User | undefined = users.find((user: User) => user.id === poetId);
@@ -82,7 +81,7 @@ export default function GameSession() {
   };
 
   useEffect(() => {
-    console.log("mount");
+    window.history.replaceState({}, "");
   }, []);
 
   useEffect(() => {
