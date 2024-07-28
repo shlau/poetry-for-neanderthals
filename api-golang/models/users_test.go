@@ -61,7 +61,7 @@ func TestUserModel(t *testing.T) {
 			WithArgs("2").
 			WillReturnRows(pgxmock.NewRows([]string{"0"}).
 				AddRow(0))
-		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM games WHERE game_id=$1`)).
+		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM games WHERE id=$1`)).
 			WithArgs("2").WillReturnResult(pgxmock.NewResult("DELETE", 1))
 		mockConn.ExpectCommit()
 		err := mockUserModel.Remove("1", "2")

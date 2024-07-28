@@ -253,6 +253,10 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(ts.mockConn.NewRows([]string{"red_score"}).
 				AddRow("4")).
 			WithArgs("3", "1")
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT words FROM games WHERE id=$1`)).
+			WillReturnRows(ts.mockConn.NewRows([]string{"words"}).
+				AddRow(`{"easy":"easy_word", "hard":"hard_word"}`)).
+			WithArgs("1")
 
 		ts.gs.HandleConnect()
 		ts.gs.HandleMessage()
