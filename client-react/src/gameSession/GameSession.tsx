@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
 import { Team, User } from "../models/User.model";
-import { GameMessage, Word } from "../models/Game.model";
+import { GameData, GameMessage, Word } from "../models/Game.model";
 import Game from "../game/Game";
 import Lobby from "../lobby/Lobby";
 
@@ -25,6 +25,7 @@ export interface LobbyProps {
   sendMessage: Function;
   users: User[];
   currentUser: User;
+  gameData: GameData;
 }
 
 export default function GameSession() {
@@ -34,6 +35,7 @@ export default function GameSession() {
   const [blueScore, setBlueScore] = useState("0");
   const [poetId, setPoetId] = useState("");
   const [word, setWord] = useState({ easy: "", hard: "" });
+  const [gameData, setGameData] = useState({} as GameData);
   const ref = useRef({ id: 0, endTime: Date.now() });
   const [duration, setDuration] = useState(ROUND_DURATION_MILLIS);
   const [roundInProgress, setRoundInProgress] = useState(false);
@@ -119,6 +121,10 @@ export default function GameSession() {
         case "wordUpdate":
           setWord(message.data);
           break;
+        case "endGame":
+          setGameData(message.data);
+          setGameInProgress(false);
+          break;
         default:
       }
     }
@@ -127,7 +133,12 @@ export default function GameSession() {
   const handleEcho = (message: GameMessage) => {
     switch (message.data) {
       case "startGame":
+        setRedScore("0");
+        setBlueScore("0");
         setGameInProgress(true);
+        break;
+      case "endRound":
+        setDuration(0);
         break;
       case "startRound":
         ref.current.endTime = Date.now() + ROUND_DURATION_MILLIS;
@@ -159,6 +170,11 @@ export default function GameSession() {
       hideBonk={hideBonk}
     />
   ) : (
-    <Lobby sendMessage={sendMessage} users={users} currentUser={currentUser} />
+    <Lobby
+      sendMessage={sendMessage}
+      users={users}
+      currentUser={currentUser}
+      gameData={gameData}
+    />
   );
 }

@@ -94,7 +94,7 @@ func (ws *GameSocket) HandleMessage() {
 					teamVal = RED_TEAM
 				}
 
-				gameMessage := GameMessage{Data: fmt.Sprintf("%s:%s", teamVal, score), Type: "score"}
+				gameMessage := GameMessage{Data: fmt.Sprintf("%s:%d", teamVal, score), Type: "score"}
 				ws.BroadcastGameMessage(gameMessage, s)
 				ws.PickNextWord(gameId.(string), s)
 			}
@@ -139,6 +139,7 @@ func (ws *GameSocket) HandleMessage() {
 				log.Errorf("Invalid message: %s", msg)
 				return
 			}
+			ws.echoMessage("endRound", s)
 			ws.SwitchPoet(gameId.(string), message[1], s)
 		default:
 			return
@@ -155,8 +156,27 @@ func (ws *GameSocket) PickNextWord(gameId string, s *melody.Session) {
 	ws.BroadcastGameMessage(gameMessage, s)
 }
 
-func (ws *GameSocket) EndGame(gameId string) {
+func (ws *GameSocket) EndGame(gameId string, s *melody.Session) {
+	game, err := ws.g.Get(gameId)
+	if err != nil {
+		log.Error("Failed to get game data at end: ", err.Error())
+		return
+	}
 	ws.g.Reset(gameId)
+
+	endGameMessage := struct {
+		Data *models.Game `json:"data"`
+		Type string       `json:"type"`
+	}{
+		Data: game,
+		Type: "endGame",
+	}
+	jsonEncoding, err := json.Marshal(endGameMessage)
+	if err != nil {
+		log.Error("Failed to send end game message: ", err.Error())
+		return
+	}
+	ws.BroadcastToChannel(jsonEncoding, s)
 }
 
 func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Session) {
@@ -175,13 +195,8 @@ func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Se
 		log.Error("Failed to filter blue users", err.Error())
 		return
 	}
-	numRounds := max(len(redUsers), len(blueUsers))
 
 	game, err := ws.g.Get(gameId)
-	if game.RedPoetIdx >= numRounds*2 {
-		ws.EndGame(gameId)
-		return
-	}
 
 	if err != nil {
 		log.Error("Failed to get game for poet switch: ", err.Error())
@@ -198,11 +213,18 @@ func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Se
 		col = "red_poet_idx"
 		blueIdx := game.BluePoetIdx
 		nextPoet = blueUsers[blueIdx%len(blueUsers)]
+
 	}
 
-	_, err = ws.g.IncreaseValue(gameId, col, "1")
+	newIdx, err := ws.g.IncreaseValue(gameId, col, "1")
 	if err != nil {
 		log.Error("Failed to increase poet idx: ", err.Error())
+		return
+	}
+
+	numRounds := max(len(redUsers), len(blueUsers))
+	if newIdx >= numRounds*2 && currentTeam == RED_TEAM {
+		ws.EndGame(gameId, s)
 		return
 	}
 
@@ -224,7 +246,12 @@ func (ws *GameSocket) HandleDisconnect() {
 		}
 
 		log.Printf("Removed user: %s", userId)
-		ws.u.Remove(userId.(string), gameId.(string))
+		err := ws.u.Remove(userId.(string), gameId.(string))
+		if err != nil {
+			log.Error("failed to remove user on disconnect: ", err.Error())
+			return
+		}
+		ws.BroadcastGameUsers(gameId.(string), s)
 	})
 }
 
@@ -253,8 +280,7 @@ func (ws *GameSocket) BroadcastToChannel(msg []byte, s *melody.Session) {
 func (ws *GameSocket) BroadcastGameMessage(gameMessage GameMessage, s *melody.Session) {
 	jsonEncoding, err := json.Marshal(gameMessage)
 	if err != nil {
-		log.Error("Failed to game message: ", err.Error())
-		s.Close()
+		log.Error("Failed to send game message: ", err.Error())
 		return
 	}
 	ws.BroadcastToChannel(jsonEncoding, s)

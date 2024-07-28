@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
-	log "github.com/sirupsen/logrus"
 	"poetry.sheldonlau.com/models"
 )
 
@@ -56,7 +55,6 @@ func (app *Application) JoinGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if game.InProgress {
-		log.Info("Game already in progress")
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}

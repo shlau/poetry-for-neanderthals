@@ -76,7 +76,7 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it updates score", func(t *testing.T) {
 		mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_score=blue_score+$1 WHERE id=$2 RETURNING blue_score`)).WillReturnRows(mockConn.NewRows([]string{"blue_score"}).
-			AddRow("3")).
+			AddRow(3)).
 			WithArgs("2", "1")
 		score, err := mockGameModel.IncreaseValue("1", "blue_score", "2")
 
@@ -84,8 +84,8 @@ func TestGameModel(t *testing.T) {
 			t.Errorf("unexpected error %s", err)
 		}
 
-		if score != "3" {
-			t.Errorf("incorrect score, want %s, got %s", "3", score)
+		if score != 3 {
+			t.Errorf("incorrect score, want %d, got %d", 3, score)
 		}
 	})
 
@@ -145,7 +145,7 @@ func TestGameModel(t *testing.T) {
 				"4", "Emily", "2", false, "1",
 			},
 		}
-		mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY name")).
+		mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
 			WithArgs("1").
 			WillReturnRows(mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRows(values...))

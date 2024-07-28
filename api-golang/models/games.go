@@ -31,8 +31,8 @@ type Game struct {
 	createdAt   time.Time
 	RedPoetIdx  int
 	BluePoetIdx int
-	RedScore    int    `json: "redScore"`
-	BlueScore   int    `json: "blueScore"`
+	RedScore    int    `json:"redScore"`
+	BlueScore   int    `json:"blueScore"`
 	Words       []Word `json:"words"`
 }
 
@@ -96,7 +96,7 @@ func (g *GameModel) RandomizeTeams(gameId string) error {
 }
 
 func (g *GameModel) Users(gameId string) []User {
-	rows, err := g.Conn.Query(context.Background(), "SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY name", gameId)
+	rows, err := g.Conn.Query(context.Background(), "SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id", gameId)
 	if err != nil {
 		log.Fatal(err)
 		return []User{}
@@ -199,21 +199,21 @@ func (g *GameModel) Join(username string, gameId string) (User, error) {
 	return User{Name: username, Id: userId, GameId: gameId}, nil
 }
 
-func (g *GameModel) IncreaseValue(gameId string, col string, val string) (string, error) {
+func (g *GameModel) IncreaseValue(gameId string, col string, val string) (int, error) {
 	validCols := []string{"red_score", "blue_score", "red_poet_idx", "blue_poet_idx"}
 	if slices.Contains(validCols, col) {
-		var updatedValue string
+		var updatedValue int
 		stmt := fmt.Sprintf(`UPDATE games SET %s=%s+$1 WHERE id=$2 RETURNING %s`, col, col, col)
 		err := g.Conn.QueryRow(context.Background(), stmt, val, gameId).Scan(&updatedValue)
 		if err != nil {
 			log.Error("Failed to increase game value: ", err.Error())
-			return "", err
+			return -1, err
 		}
 
 		return updatedValue, nil
 	}
 
-	return "", fmt.Errorf("invalid column for score update %s", col)
+	return -1, fmt.Errorf("invalid column for score update %s", col)
 }
 
 func (g *GameModel) UpdateCol(gameId string, col string, val any) error {
