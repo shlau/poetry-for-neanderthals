@@ -7,7 +7,8 @@ import { LobbyProps } from "../gameSession/GameSession";
 
 export default function Lobby({ sendMessage, users, currentUser }: LobbyProps) {
   const [ready, setReady] = useState(false);
-  const canStart = users.filter((user: User) => !user.ready).length === 0;
+  const canStart =
+    users.length > 1 && users.filter((user: User) => !user.ready).length === 0;
 
   const onReadyPress = () => {
     sendMessage(`update:users:${currentUser.id}:ready:${!ready}`);
