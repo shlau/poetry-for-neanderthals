@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
 import { Team, User } from "../models/User.model";
 import { GameData, GameMessage, Word } from "../models/Game.model";
@@ -41,7 +41,6 @@ export default function GameSession() {
   const [roundInProgress, setRoundInProgress] = useState(false);
   const [bonkOpen, setBonkOpen] = useState(false);
 
-  const navigate = useNavigate();
   const location = useLocation();
   const currentUserData: User = location.state;
 
