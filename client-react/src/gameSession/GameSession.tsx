@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
 import { Team, User } from "../models/User.model";
 import { GameMessage, Word } from "../models/Game.model";
@@ -36,11 +36,19 @@ export default function GameSession() {
   const [duration, setDuration] = useState(ROUND_DURATION_MILLIS);
   const [roundInProgress, setRoundInProgress] = useState(false);
 
+  const navigate = useNavigate();
   const location = useLocation();
   const currentUserData: User = location.state;
+
   const currentUser: User =
     users.find((user: User) => user.id === currentUserData.id) ??
     currentUserData;
+
+  if (!currentUser?.gameId) {
+    navigate(`/`);
+    return;
+  }
+
   const poet: User | undefined = users.find((user: User) => user.id === poetId);
   const socketUrl = `/channel/${currentUser.gameId}/ws?userId=${currentUser.id}&gameId=${currentUser.gameId}&name=${currentUser.name}`;
   const { sendMessage, lastMessage } = useWebSocket(socketUrl);
@@ -63,6 +71,10 @@ export default function GameSession() {
   const pauseRoundTime = (): void => {
     clearInterval(ref.current.id);
   };
+
+  useEffect(() => {
+    console.log('mount')
+  }, [])
 
   useEffect(() => {
     if (lastMessage !== null) {
