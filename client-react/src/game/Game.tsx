@@ -40,7 +40,9 @@ export default function Game({
     const col = currentUser.team === Team.BLUE ? "blue_score" : "red_score";
     sendMessage(`score:${col}:${amount}`);
   };
-  const skipWord = () => {};
+  const skipWord = () => {
+    updateScore(-1);
+  };
   const bonkPoet = () => {};
 
   const getTeamUsers = (team: Team): Iterable<ReactNode> =>

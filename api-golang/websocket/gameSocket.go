@@ -96,6 +96,7 @@ func (ws *GameSocket) HandleMessage() {
 
 				gameMessage := GameMessage{Data: fmt.Sprintf("%s:%s", teamVal, score), Type: "score"}
 				ws.BroadcastGameMessage(gameMessage, s)
+				ws.PickNextWord(gameId.(string), s)
 			}
 		case "randomize":
 			err := ws.g.RandomizeTeams(gameId.(string))
@@ -131,14 +132,8 @@ func (ws *GameSocket) HandleMessage() {
 				log.Error("Poet not found at game start")
 			}
 		case "startRound":
-			word, err := ws.g.NextWord(gameId.(string))
-			if err != nil {
-				log.Error("Failed to get next word at round start")
-			} else {
-				gameMessage := GameMessage{Data: word, Type: "wordUpdate"}
-				ws.BroadcastGameMessage(gameMessage, s)
-				ws.echoMessage("startRound", s)
-			}
+			ws.PickNextWord(gameId.(string), s)
+			ws.echoMessage("startRound", s)
 		case "endRound":
 			if len(message) != 2 {
 				log.Errorf("Invalid message: %s", msg)
@@ -149,6 +144,15 @@ func (ws *GameSocket) HandleMessage() {
 			return
 		}
 	})
+}
+
+func (ws *GameSocket) PickNextWord(gameId string, s *melody.Session) {
+	word, err := ws.g.NextWord(gameId)
+	if err != nil {
+		log.Error("Failed to get next word at round start")
+	}
+	gameMessage := GameMessage{Data: word, Type: "wordUpdate"}
+	ws.BroadcastGameMessage(gameMessage, s)
 }
 
 func (ws *GameSocket) EndGame(gameId string) {
