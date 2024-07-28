@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -38,10 +39,32 @@ func TestUserModel(t *testing.T) {
 	})
 
 	t.Run("it removes user", func(t *testing.T) {
+		mockConn.ExpectBeginTx(pgx.TxOptions{})
 		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM users WHERE id=$1`)).
 			WithArgs("1").WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM users WHERE game_id=$1`)).
+			WithArgs("2").
+			WillReturnRows(pgxmock.NewRows([]string{"3"}).
+				AddRow(3))
+		mockConn.ExpectCommit()
+		err := mockUserModel.Remove("1", "2")
+		if err != nil {
+			t.Errorf("unexpected error %s", err)
+		}
+	})
 
-		err := mockUserModel.Remove("1")
+	t.Run("it removes user and game if no more users", func(t *testing.T) {
+		mockConn.ExpectBeginTx(pgx.TxOptions{})
+		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM users WHERE id=$1`)).
+			WithArgs("1").WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM users WHERE game_id=$1`)).
+			WithArgs("2").
+			WillReturnRows(pgxmock.NewRows([]string{"0"}).
+				AddRow(0))
+		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM games WHERE game_id=$1`)).
+			WithArgs("2").WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mockConn.ExpectCommit()
+		err := mockUserModel.Remove("1", "2")
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
 		}

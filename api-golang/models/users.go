@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	log "github.com/sirupsen/logrus"
 	"poetry.sheldonlau.com/db"
 )
@@ -36,11 +37,42 @@ func (u *UserModel) Create(name string, team string, gameId string) (User, error
 	return User{Id: id, Name: name, Team: team, GameId: gameId}, nil
 }
 
-func (u *UserModel) Remove(userId string) error {
+func (u *UserModel) Remove(userId string, gameId string) error {
+	ctx := context.Background()
+	tx, err := u.Conn.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		log.Error("Failed to start transaction for user removal: ", err.Error())
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+
 	stmt := `DELETE FROM users WHERE id=$1`
-	_, err := u.Conn.Exec(context.Background(), stmt, userId)
+	_, err = u.Conn.Exec(ctx, stmt, userId)
 	if err != nil {
 		log.Error("Failed to delete user: ", err.Error())
+		return err
+	}
+
+	var numUsers int
+	stmt = `SELECT COUNT(*) FROM users WHERE game_id=$1`
+	err = u.Conn.QueryRow(ctx, stmt, gameId).Scan(&numUsers)
+	if err != nil {
+		log.Error("Failed to get user count: ", err.Error())
+		return err
+	}
+
+	if numUsers == 0 {
+		stmt = `DELETE FROM games WHERE id=$1`
+		_, err = u.Conn.Exec(ctx, stmt, gameId)
+		if err != nil {
+			log.Error("Failed to delete game: ", err.Error())
+			return err
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		log.Error("Failed to commit transaction for user removal: ", err.Error())
 		return err
 	}
 
