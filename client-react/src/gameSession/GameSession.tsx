@@ -131,6 +131,7 @@ export default function GameSession() {
         break;
       case "startRound":
         ref.current.endTime = Date.now() + ROUND_DURATION_MILLIS;
+        setDuration(ROUND_DURATION_MILLIS);
         startTimer();
         break;
       case "pauseRound":
