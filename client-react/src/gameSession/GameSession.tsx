@@ -17,6 +17,8 @@ export interface GameProps {
   duration: number;
   poet: User | undefined;
   word: Word;
+  bonkOpen: boolean;
+  hideBonk: (event: React.SyntheticEvent | Event, reason?: string) => void;
 }
 
 export interface LobbyProps {
@@ -35,6 +37,7 @@ export default function GameSession() {
   const ref = useRef({ id: 0, endTime: Date.now() });
   const [duration, setDuration] = useState(ROUND_DURATION_MILLIS);
   const [roundInProgress, setRoundInProgress] = useState(false);
+  const [bonkOpen, setBonkOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -72,9 +75,13 @@ export default function GameSession() {
     clearInterval(ref.current.id);
   };
 
+  const hideBonk = () => {
+    setBonkOpen(false);
+  };
+
   useEffect(() => {
-    console.log('mount')
-  }, [])
+    console.log("mount");
+  }, []);
 
   useEffect(() => {
     if (lastMessage !== null) {
@@ -129,6 +136,9 @@ export default function GameSession() {
       case "pauseRound":
         pauseRoundTime();
         break;
+      case "bonk":
+        setBonkOpen(true);
+        break;
       default:
     }
   };
@@ -144,6 +154,8 @@ export default function GameSession() {
       duration={duration}
       poet={poet}
       word={word}
+      bonkOpen={bonkOpen}
+      hideBonk={hideBonk}
     />
   ) : (
     <Lobby sendMessage={sendMessage} users={users} currentUser={currentUser} />

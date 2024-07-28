@@ -2,7 +2,8 @@ import { ReactNode, useState } from "react";
 import { GameProps } from "../gameSession/GameSession";
 import { Team, User } from "../models/User.model";
 import "./Game.less";
-import { Button } from "@mui/material";
+import { Button, Snackbar } from "@mui/material";
+import BonkBat from "./BonkBat";
 
 export default function Game({
   sendMessage,
@@ -14,6 +15,8 @@ export default function Game({
   duration,
   poet,
   word,
+  bonkOpen,
+  hideBonk,
 }: GameProps) {
   const [roundPaused, setRoundPaused] = useState(false);
   const isPoet = poet?.id === currentUser.id;
@@ -43,7 +46,9 @@ export default function Game({
   const skipWord = () => {
     updateScore(-1);
   };
-  const bonkPoet = () => {};
+  const bonkPoet = () => {
+    sendMessage("echo:bonk");
+  };
 
   const getTeamUsers = (team: Team): Iterable<ReactNode> =>
     (users ?? [])
@@ -60,6 +65,13 @@ export default function Game({
 
   return (
     <div className="gamepage">
+      <Snackbar
+        open={bonkOpen}
+        autoHideDuration={1000}
+        onClose={hideBonk}
+        action={<BonkBat />}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      />
       <div className="page-body">
         <div className="teams">
           <div className="team red-team">
