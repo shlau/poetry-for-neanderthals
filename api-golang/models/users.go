@@ -24,6 +24,20 @@ type UserModel struct {
 	Conn db.DbConn
 }
 
+func (u *UserModel) Get(userId string) (*User, error) {
+	user := new(User)
+	stmt := `SELECT id,name,team,ready,game_id FROM users WHERE id=$1`
+	err := u.Conn.QueryRow(context.Background(), stmt, userId).
+		Scan(&user.Id, &user.Name, &user.Team, &user.Ready, &user.GameId)
+
+	if err != nil {
+		log.Error("Failed to get game: ", err.Error())
+		return user, err
+	}
+
+	return user, nil
+}
+
 func (u *UserModel) Create(name string, team string, gameId string) (User, error) {
 	var id string
 	stmt := `INSERT INTO users (name, team, game_id) VALUES($1, $2, $3) RETURNING id`
@@ -37,12 +51,12 @@ func (u *UserModel) Create(name string, team string, gameId string) (User, error
 	return User{Id: id, Name: name, Team: team, GameId: gameId}, nil
 }
 
-func (u *UserModel) Remove(userId string, gameId string) error {
+func (u *UserModel) Remove(userId string, gameId string) (int, error) {
 	ctx := context.Background()
 	tx, err := u.Conn.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		log.Error("Failed to start transaction for user removal: ", err.Error())
-		return err
+		return -1, err
 	}
 
 	defer tx.Rollback(ctx)
@@ -51,7 +65,7 @@ func (u *UserModel) Remove(userId string, gameId string) error {
 	_, err = u.Conn.Exec(ctx, stmt, userId)
 	if err != nil {
 		log.Error("Failed to delete user: ", err.Error())
-		return err
+		return -1, err
 	}
 
 	var numUsers int
@@ -59,7 +73,7 @@ func (u *UserModel) Remove(userId string, gameId string) error {
 	err = u.Conn.QueryRow(ctx, stmt, gameId).Scan(&numUsers)
 	if err != nil {
 		log.Error("Failed to get user count: ", err.Error())
-		return err
+		return -1, err
 	}
 
 	if numUsers == 0 {
@@ -67,16 +81,16 @@ func (u *UserModel) Remove(userId string, gameId string) error {
 		_, err = u.Conn.Exec(ctx, stmt, gameId)
 		if err != nil {
 			log.Error("Failed to delete game: ", err.Error())
-			return err
+			return -1, err
 		}
 	}
 
 	if err = tx.Commit(ctx); err != nil {
 		log.Error("Failed to commit transaction for user removal: ", err.Error())
-		return err
+		return -1, err
 	}
 
-	return nil
+	return numUsers, nil
 }
 
 func (u *UserModel) UpdateCol(userId string, col string, val any) error {

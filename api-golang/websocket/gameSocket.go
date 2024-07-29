@@ -139,12 +139,16 @@ func (ws *GameSocket) HandleMessage() {
 				log.Errorf("Invalid message: %s", msg)
 				return
 			}
-			ws.echoMessage("endRound", s)
-			ws.SwitchPoet(gameId.(string), message[1], s)
+			ws.EndRound(message[1], gameId.(string), s)
 		default:
 			return
 		}
 	})
+}
+
+func (ws *GameSocket) EndRound(currentTeam string, gameId string, s *melody.Session) {
+	ws.echoMessage("endRound", s)
+	ws.SwitchPoet(gameId, currentTeam, s)
 }
 
 func (ws *GameSocket) PickNextWord(gameId string, s *melody.Session) {
@@ -179,20 +183,30 @@ func (ws *GameSocket) EndGame(gameId string, s *melody.Session) {
 	ws.BroadcastToChannel(jsonEncoding, s)
 }
 
-func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Session) {
+func (ws *GameSocket) getTeamUsers(gameId string) ([]models.User, []models.User, error) {
 	users := ws.g.Users(gameId)
 	redUsers, err := genericSlices.Filter(users, func(user models.User) (bool, error) {
 		return user.Team == RED_TEAM, nil
 	})
 	if err != nil {
 		log.Error("Failed to filter red users: ", err.Error())
-		return
+		return []models.User{}, []models.User{}, err
 	}
 	blueUsers, err := genericSlices.Filter(users, func(user models.User) (bool, error) {
 		return user.Team == BLUE_TEAM, nil
 	})
 	if err != nil {
 		log.Error("Failed to filter blue users", err.Error())
+		return []models.User{}, []models.User{}, err
+	}
+
+	return redUsers, blueUsers, nil
+}
+
+func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Session) {
+	redUsers, blueUsers, err := ws.getTeamUsers(gameId)
+	if err != nil {
+		log.Error("Failed to get team users for poet switch: ", err.Error())
 		return
 	}
 
@@ -204,7 +218,7 @@ func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Se
 	}
 
 	col := ""
-	nextPoet := users[0]
+	nextPoet := models.User{}
 	if currentTeam == BLUE_TEAM {
 		col = "blue_poet_idx"
 		redIdx := game.RedPoetIdx
@@ -213,7 +227,6 @@ func (ws *GameSocket) SwitchPoet(gameId string, currentTeam string, s *melody.Se
 		col = "red_poet_idx"
 		blueIdx := game.BluePoetIdx
 		nextPoet = blueUsers[blueIdx%len(blueUsers)]
-
 	}
 
 	newIdx, err := ws.g.IncreaseValue(gameId, col, "1")
@@ -245,13 +258,37 @@ func (ws *GameSocket) HandleDisconnect() {
 			return
 		}
 
-		log.Printf("Removed user: %s", userId)
-		err := ws.u.Remove(userId.(string), gameId.(string))
+		numUsers, err := ws.u.Remove(userId.(string), gameId.(string))
 		if err != nil {
 			log.Error("failed to remove user on disconnect: ", err.Error())
 			return
 		}
-		ws.BroadcastGameUsers(gameId.(string), s)
+
+		if numUsers > 0 {
+			game, err := ws.g.Get(gameId.(string))
+			if err != nil {
+				log.Error("Failed to game during disconnect: ", err.Error())
+				return
+			}
+			if game.InProgress {
+				if numUsers < 2 {
+					ws.EndGame(gameId.(string), s)
+				} else {
+					redUsers, blueUsers, err := ws.getTeamUsers(gameId.(string))
+					if err != nil {
+						log.Error("Failed to get team users during disconnect: ", err.Error())
+						return
+					}
+
+					if len(redUsers) < 1 || len(blueUsers) < 1 {
+						ws.EndGame(gameId.(string), s)
+					} else {
+						ws.EndRound(BLUE_TEAM, gameId.(string), s)
+					}
+				}
+			}
+			ws.BroadcastGameUsers(gameId.(string), s)
+		}
 	})
 }
 

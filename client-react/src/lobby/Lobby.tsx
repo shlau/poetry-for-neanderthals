@@ -12,8 +12,13 @@ export default function Lobby({
   gameData,
 }: LobbyProps) {
   const [ready, setReady] = useState(false);
+  const blueUsers = users.filter(
+    (user: User) => user.ready && user.team === Team.BLUE
+  );
+  const redUsers = users.filter((user: User) => user.team === Team.RED);
+  const unReadyUsers = users.filter((user: User) => !user.ready);
   const canStart =
-    users.length > 1 && users.filter((user: User) => !user.ready).length === 0;
+    unReadyUsers.length < 1 && redUsers.length >= 1 && blueUsers.length >= 1;
 
   const onReadyPress = () => {
     sendMessage(`update:users:${currentUser.id}:ready:${!ready}`);

@@ -90,6 +90,12 @@ export default function GameSession() {
     }
   }, [lastMessage]);
 
+  const endRound = () => {
+    setRoundInProgress(false);
+    clearInterval(ref.current.id);
+    setDuration(0);
+  };
+
   const handleMessage = (message: GameMessage) => {
     if (message.type && message.data) {
       switch (message.type) {
@@ -122,6 +128,7 @@ export default function GameSession() {
         case "endGame":
           setGameData(message.data);
           setGameInProgress(false);
+          endRound();
           break;
         default:
       }
@@ -136,7 +143,7 @@ export default function GameSession() {
         setGameInProgress(true);
         break;
       case "endRound":
-        setDuration(0);
+        endRound();
         break;
       case "startRound":
         ref.current.endTime = Date.now() + ROUND_DURATION_MILLIS;
