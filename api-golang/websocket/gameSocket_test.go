@@ -251,12 +251,165 @@ func TestConnect(t *testing.T) {
 				AddRow("2", "new name", "1", false, "1"))
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET red_score=red_score+$1 WHERE id=$2 RETURNING red_score`)).
 			WillReturnRows(ts.mockConn.NewRows([]string{"red_score"}).
-				AddRow("4")).
+				AddRow(4)).
 			WithArgs("3", "1")
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT words FROM games WHERE id=$1`)).
 			WillReturnRows(ts.mockConn.NewRows([]string{"words"}).
 				AddRow(`{"easy":"easy_word", "hard":"hard_word"}`)).
 			WithArgs("1")
+
+		ts.gs.HandleConnect()
+		ts.gs.HandleMessage()
+		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
+			if i == 1 {
+				if string(b) != want {
+					t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
+				}
+				s.Close()
+			}
+
+			i++
+		})
+		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
+			close(done)
+		})
+		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.ReadMessage()
+		defer conn.Close()
+
+		<-done
+	})
+
+	t.Run("it handles startGame", func(t *testing.T) {
+		done := make(chan bool)
+		ts := NewTestServer(t)
+		msg := `startGame`
+		wantPoetChange := `{"data":"poetId","type":"poetChange"}`
+		wantEcho := `{"data":"startGame","type":"echo"}`
+		i := 0
+
+		server := httptest.NewServer(ts)
+		defer server.Close()
+
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRow("2", "new name", "1", false, "1"))
+		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET in_progress=$1 WHERE id=$2`)).
+			WithArgs(true, "1").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
+			WithArgs("1").
+			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRows([]any{"poetId", "John", "1", true, "1"}))
+
+		ts.gs.HandleConnect()
+		ts.gs.HandleMessage()
+		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
+			if i == 1 {
+				if string(b) != wantEcho {
+					t.Errorf("invalid session data - want: %s, got: %s", wantEcho, string(b))
+				}
+				s.Close()
+			}
+			if i == 2 {
+				if string(b) != wantPoetChange {
+					t.Errorf("invalid session data - want: %s, got: %s", wantPoetChange, string(b))
+				}
+				s.Close()
+			}
+
+			i++
+		})
+		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
+			close(done)
+		})
+		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.ReadMessage()
+		defer conn.Close()
+
+		<-done
+	})
+
+	t.Run("it handles endRound", func(t *testing.T) {
+		done := make(chan bool)
+		ts := NewTestServer(t)
+		msg := `endRound:1`
+		wantPoetChange := `{"data":"poetId","type":"poetChange"}`
+		wantEcho := `{"data":"endRound","type":"echo"}`
+		i := 0
+
+		server := httptest.NewServer(ts)
+		defer server.Close()
+
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRow("2", "new name", "1", false, "1"))
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
+			WithArgs("1").
+			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRows([]any{"1", "John", "1", true, "1"}, []any{"poetId", "Ann", "2", true, "1"}))
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1")).
+			WithArgs("1").
+			WillReturnRows(ts.mockConn.NewRows([]string{"red_poet_idx", "blue_poet_idx", "red_score", "blue_score", "in_progress"}).
+				AddRows([]any{0, 0, 0, 0, true}))
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_poet_idx=blue_poet_idx+$1 WHERE id=$2 RETURNING blue_poet_idx`)).WillReturnRows(ts.mockConn.NewRows([]string{"blue_poet_idx"}).
+			AddRow(3)).
+			WithArgs("1", "1")
+
+		ts.gs.HandleConnect()
+		ts.gs.HandleMessage()
+		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
+			if i == 1 {
+				if string(b) != wantEcho {
+					t.Errorf("invalid session data - want: %s, got: %s", wantEcho, string(b))
+				}
+				s.Close()
+			}
+			if i == 2 {
+				if string(b) != wantPoetChange {
+					t.Errorf("invalid session data - want: %s, got: %s", wantPoetChange, string(b))
+				}
+				s.Close()
+			}
+
+			i++
+		})
+		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
+			close(done)
+		})
+		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		conn.ReadMessage()
+		defer conn.Close()
+
+		<-done
+	})
+
+	t.Run("it randomizes teams", func(t *testing.T) {
+		done := make(chan bool)
+		ts := NewTestServer(t)
+		msg := `randomize`
+		want := `{"data":[{"id":"poetId","name":"John","team":"1","ready":true,"gameId":"1"},{"id":"2","name":"Ann","team":"2","ready":true,"gameId":"1"}],"type":"users"}`
+		i := 0
+
+		server := httptest.NewServer(ts)
+		defer server.Close()
+
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRow("2", "new name", "1", false, "1"))
+		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=ceil(random()*2) WHERE game_id=$1`)).
+			WithArgs("1").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
+			WithArgs("1").
+			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+				AddRows([]any{"poetId", "John", "1", true, "1"}, []any{"2", "Ann", "2", true, "1"}))
 
 		ts.gs.HandleConnect()
 		ts.gs.HandleMessage()
