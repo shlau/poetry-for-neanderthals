@@ -167,4 +167,11 @@ func TestGameModel(t *testing.T) {
 			t.Errorf("unexpected error %s", err)
 		}
 	})
+	t.Run("it gets the game", func(t *testing.T) {
+		mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1`)).
+			WithArgs("1").
+			WillReturnRows(mockConn.NewRows([]string{"red_poet_idx", "blue_poet_idx", "red_score", "blue_score", "in_progress"}).
+				AddRows([]any{0, 0, 0, 0, true}))
+		mockGameModel.Get("1")
+	})
 }
