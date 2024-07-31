@@ -23,6 +23,13 @@ func (ts *TestServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ts.gs.UpgradeConnection(w, r)
 }
 
+func (ts *TestServer) ExpectConnect() {
+	ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
+		WithArgs("mockGameId").
+		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
+			AddRow("mockUserId", "mockUserName", "blueTeam", false, "mockGameId"))
+}
+
 func NewTestServer(t testing.TB) *TestServer {
 	mockConn, err := pgxmock.NewConn()
 	if err != nil {
@@ -42,6 +49,15 @@ func NewDialer(url string) (*websocket.Conn, error) {
 	return conn, err
 }
 
+func GetDialerConn(server *httptest.Server) *websocket.Conn {
+	return MustNewDialer(fmt.Sprintf("%s?gameId=mockGameId&userId=mockUserId", server.URL))
+}
+
+func AssertMessage(t testing.TB, b []byte, want string) {
+	if string(b) != want {
+		t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
+	}
+}
 func MustNewDialer(url string) *websocket.Conn {
 	conn, err := NewDialer(url)
 
@@ -59,17 +75,11 @@ func TestConnect(t *testing.T) {
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
-
+		ts.ExpectConnect()
 		ts.gs.handleConnect()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
-			want := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
-			if string(b) != want {
-				t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
-			}
+			want := `{"data":[{"id":"mockUserId","name":"mockUserName","team":"blueTeam","ready":false,"gameId":"mockGameId"}],"type":"users"}`
+			AssertMessage(t, b, want)
 			s.Close()
 		})
 
@@ -77,7 +87,7 @@ func TestConnect(t *testing.T) {
 			close(done)
 		})
 
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.ReadMessage()
 		defer conn.Close()
 
@@ -106,36 +116,31 @@ func TestConnect(t *testing.T) {
 	t.Run("it handles user update message", func(t *testing.T) {
 		done := make(chan bool)
 		ts := NewTestServer(t)
-		msg := `update:users:1:team:1`
-		want := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
+		msg := `update:users:mockUserId:team:blueTeam`
+		want := `{"data":[{"id":"mockUserId","name":"mockUserName","team":"blueTeam","ready":false,"gameId":"mockGameId"}],"type":"users"}`
 		i := 0
 
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
 		// broadcast users on connect
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
+		ts.ExpectConnect()
 
 		// update specified user
 		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=$1 WHERE id=$2`)).
-			WithArgs("1", "1").
+			WithArgs("blueTeam", "mockUserId").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		// broadcast users on update
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
+				AddRow("mockUserId", "mockUserName", "blueTeam", false, "mockGameId"))
 
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
-			if string(b) != want {
-				t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
-			}
+			AssertMessage(t, b, want)
 			if i == 1 {
 				s.Close()
 			}
@@ -144,7 +149,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
@@ -156,31 +161,23 @@ func TestConnect(t *testing.T) {
 		done := make(chan bool)
 		ts := NewTestServer(t)
 		msg := `echo:start`
-		wantConnect := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
+		wantConnect := `{"data":[{"id":"mockUserId","name":"mockUserName","team":"blueTeam","ready":false,"gameId":"mockGameId"}],"type":"users"}`
 		wantEcho := `{"data":"start","type":"echo"}`
 		i := 0
 
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
-
+		ts.ExpectConnect()
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 0 {
-				if string(b) != wantConnect {
-					t.Errorf("invalid session data - want: %s, got: %s", wantConnect, string(b))
-				}
+				AssertMessage(t, b, wantConnect)
 
 			}
 			if i == 1 {
-				if string(b) != wantEcho {
-					t.Errorf("invalid session data - want: %s, got: %s", wantEcho, string(b))
-				}
+				AssertMessage(t, b, wantEcho)
 				s.Close()
 			}
 
@@ -189,7 +186,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
@@ -207,18 +204,12 @@ func TestConnect(t *testing.T) {
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
-
+		ts.ExpectConnect()
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
-				if string(b) != want {
-					t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
-				}
+				AssertMessage(t, b, want)
 				s.Close()
 			}
 
@@ -227,7 +218,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
@@ -245,26 +236,21 @@ func TestConnect(t *testing.T) {
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
+		ts.ExpectConnect()
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET red_score=red_score+$1 WHERE id=$2 RETURNING red_score`)).
 			WillReturnRows(ts.mockConn.NewRows([]string{"red_score"}).
 				AddRow(4)).
-			WithArgs("3", "1")
+			WithArgs("3", "mockGameId")
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT words FROM games WHERE id=$1`)).
 			WillReturnRows(ts.mockConn.NewRows([]string{"words"}).
 				AddRow(`{"easy":"easy_word", "hard":"hard_word"}`)).
-			WithArgs("1")
+			WithArgs("mockGameId")
 
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
-				if string(b) != want {
-					t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
-				}
+				AssertMessage(t, b, want)
 				s.Close()
 			}
 
@@ -273,7 +259,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
@@ -292,31 +278,24 @@ func TestConnect(t *testing.T) {
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
+		ts.ExpectConnect()
 		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET in_progress=$1 WHERE id=$2`)).
-			WithArgs(true, "1").
+			WithArgs(true, "mockGameId").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRows([]any{"poetId", "John", "1", true, "1"}))
+				AddRows([]any{"poetId", "John", "1", true, "mockGameId"}))
 
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
-				if string(b) != wantEcho {
-					t.Errorf("invalid session data - want: %s, got: %s", wantEcho, string(b))
-				}
+				AssertMessage(t, b, wantEcho)
 				s.Close()
 			}
 			if i == 2 {
-				if string(b) != wantPoetChange {
-					t.Errorf("invalid session data - want: %s, got: %s", wantPoetChange, string(b))
-				}
+				AssertMessage(t, b, wantPoetChange)
 				s.Close()
 			}
 
@@ -325,7 +304,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
@@ -344,35 +323,28 @@ func TestConnect(t *testing.T) {
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
+		ts.ExpectConnect()
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRows([]any{"1", "John", "1", true, "1"}, []any{"poetId", "Ann", "2", true, "1"}))
+				AddRows([]any{"mockUserId", "John", "blueTeam", true, "mockGameId"}, []any{"poetId", "Ann", "2", true, "1"}))
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1")).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(ts.mockConn.NewRows([]string{"red_poet_idx", "blue_poet_idx", "red_score", "blue_score", "in_progress"}).
 				AddRows([]any{0, 0, 0, 0, true}))
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_poet_idx=blue_poet_idx+$1 WHERE id=$2 RETURNING blue_poet_idx`)).WillReturnRows(ts.mockConn.NewRows([]string{"blue_poet_idx"}).
 			AddRow(3)).
-			WithArgs("1", "1")
+			WithArgs("1", "mockGameId")
 
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
-				if string(b) != wantEcho {
-					t.Errorf("invalid session data - want: %s, got: %s", wantEcho, string(b))
-				}
+				AssertMessage(t, b, wantEcho)
 				s.Close()
 			}
 			if i == 2 {
-				if string(b) != wantPoetChange {
-					t.Errorf("invalid session data - want: %s, got: %s", wantPoetChange, string(b))
-				}
+				AssertMessage(t, b, wantPoetChange)
 				s.Close()
 			}
 
@@ -381,7 +353,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
@@ -393,31 +365,26 @@ func TestConnect(t *testing.T) {
 		done := make(chan bool)
 		ts := NewTestServer(t)
 		msg := `randomize`
-		want := `{"data":[{"id":"poetId","name":"John","team":"1","ready":true,"gameId":"1"},{"id":"2","name":"Ann","team":"2","ready":true,"gameId":"1"}],"type":"users"}`
+		want := `{"data":[{"id":"poetId","name":"John","team":"blueTeam","ready":true,"gameId":"mockGameId"},{"id":"mockUserId","name":"Ann","team":"redTeam","ready":true,"gameId":"mockGameId"}],"type":"users"}`
 		i := 0
 
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1`)).
-			WithArgs("1").
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRow("2", "new name", "1", false, "1"))
+		ts.ExpectConnect()
 		ts.mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=ceil(random()*2) WHERE game_id=$1`)).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		ts.mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
-				AddRows([]any{"poetId", "John", "1", true, "1"}, []any{"2", "Ann", "2", true, "1"}))
+				AddRows([]any{"poetId", "John", "blueTeam", true, "mockGameId"}, []any{"mockUserId", "Ann", "redTeam", true, "mockGameId"}))
 
 		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
-				if string(b) != want {
-					t.Errorf("invalid session data - want: %s, got: %s", want, string(b))
-				}
+				AssertMessage(t, b, want)
 				s.Close()
 			}
 
@@ -426,7 +393,7 @@ func TestConnect(t *testing.T) {
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
-		conn := MustNewDialer(fmt.Sprintf("%s?gameId=1&userId=2", server.URL))
+		conn := GetDialerConn(server)
 		conn.WriteMessage(websocket.TextMessage, []byte(msg))
 		conn.ReadMessage()
 		defer conn.Close()
