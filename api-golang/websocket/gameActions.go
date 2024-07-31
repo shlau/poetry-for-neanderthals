@@ -61,7 +61,7 @@ func (ws *GameSocket) handleScore(s *melody.Session, msg []byte, gameId string) 
 	}
 }
 
-func (ws *GameSocket) handleRandomize(s *melody.Session, msg []byte, gameId string) {
+func (ws *GameSocket) handleRandomize(s *melody.Session, gameId string) {
 	err := ws.g.RandomizeTeams(gameId)
 	if err != nil {
 		log.Error("Failed to randomize teams, ", err)
@@ -69,7 +69,7 @@ func (ws *GameSocket) handleRandomize(s *melody.Session, msg []byte, gameId stri
 		ws.broadcastGameUsers(gameId, s)
 	}
 }
-func (ws *GameSocket) handleResumeRound(s *melody.Session, msg []byte, gameId string) {
+func (ws *GameSocket) handleResumeRound(s *melody.Session, msg []byte) {
 	message := strings.Split(string(msg), ":")
 	if len(message) != 2 {
 		log.Errorf("Invalid message: %s", msg)
@@ -85,7 +85,7 @@ func (ws *GameSocket) handleResumeRound(s *melody.Session, msg []byte, gameId st
 	}
 }
 
-func (ws *GameSocket) handleStartGame(s *melody.Session, msg []byte, gameId string) {
+func (ws *GameSocket) handleStartGame(s *melody.Session, gameId string) {
 	ws.echoMessage("startGame", s)
 	ws.g.UpdateCol(gameId, "in_progress", true)
 
@@ -100,7 +100,7 @@ func (ws *GameSocket) handleStartGame(s *melody.Session, msg []byte, gameId stri
 	}
 }
 
-func (ws *GameSocket) handleStartRound(s *melody.Session, msg []byte, gameId string) {
+func (ws *GameSocket) handleStartRound(s *melody.Session, gameId string) {
 	ws.pickNextWord(gameId, s)
 	ws.echoMessage("startRound", s)
 }

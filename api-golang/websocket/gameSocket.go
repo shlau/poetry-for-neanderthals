@@ -53,13 +53,13 @@ func (ws *GameSocket) HandleMessage() {
 		case "score":
 			ws.handleScore(s, msg, gameId.(string))
 		case "randomize":
-			ws.handleRandomize(s, msg, gameId.(string))
+			ws.handleRandomize(s, gameId.(string))
 		case "resumeRound":
-			ws.handleResumeRound(s, msg, gameId.(string))
+			ws.handleResumeRound(s, msg)
 		case "startGame":
-			ws.handleStartGame(s, msg, gameId.(string))
+			ws.handleStartGame(s, gameId.(string))
 		case "startRound":
-			ws.handleStartRound(s, msg, gameId.(string))
+			ws.handleStartRound(s, gameId.(string))
 		case "endRound":
 			ws.handleEndRound(s, msg, gameId.(string))
 		default:
