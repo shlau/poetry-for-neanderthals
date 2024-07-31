@@ -64,7 +64,7 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRow("2", "new name", "1", false, "1"))
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			want := `{"data":[{"id":"2","name":"new name","team":"1","ready":false,"gameId":"1"}],"type":"users"}`
 			if string(b) != want {
@@ -91,7 +91,7 @@ func TestConnect(t *testing.T) {
 		server := httptest.NewServer(ts)
 		defer server.Close()
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.m.HandleDisconnect(func(s *melody.Session) {
 			close(done)
 		})
@@ -130,7 +130,7 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRow("2", "new name", "1", false, "1"))
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if string(b) != want {
@@ -168,7 +168,7 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRow("2", "new name", "1", false, "1"))
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 0 {
@@ -212,7 +212,7 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRow("2", "new name", "1", false, "1"))
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
@@ -258,7 +258,7 @@ func TestConnect(t *testing.T) {
 				AddRow(`{"easy":"easy_word", "hard":"hard_word"}`)).
 			WithArgs("1")
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
@@ -304,7 +304,7 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRows([]any{"poetId", "John", "1", true, "1"}))
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
@@ -360,7 +360,7 @@ func TestConnect(t *testing.T) {
 			AddRow(3)).
 			WithArgs("1", "1")
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
@@ -411,7 +411,7 @@ func TestConnect(t *testing.T) {
 			WillReturnRows(ts.mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRows([]any{"poetId", "John", "1", true, "1"}, []any{"2", "Ann", "2", true, "1"}))
 
-		ts.gs.HandleConnect()
+		ts.gs.handleConnect()
 		ts.gs.HandleMessage()
 		ts.gs.m.HandleSentMessage(func(s *melody.Session, b []byte) {
 			if i == 1 {
