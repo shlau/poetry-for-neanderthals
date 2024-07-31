@@ -25,9 +25,9 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it randomizes game teams", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE users SET team=ceil(random()*2) WHERE game_id=$1`)).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		err := mockGameModel.RandomizeTeams("1")
+		err := mockGameModel.RandomizeTeams("mockGameId")
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -54,9 +54,9 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it removes game", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`DELETE FROM games WHERE id=$1`)).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
-		err := mockGameModel.Remove("1")
+		err := mockGameModel.Remove("mockGameId")
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -65,9 +65,9 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it updates col", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET in_progress=$1 WHERE id=$2`)).
-			WithArgs(true, "1").
+			WithArgs(true, "mockGameId").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		err := mockGameModel.UpdateCol("1", "in_progress", true)
+		err := mockGameModel.UpdateCol("mockGameId", "in_progress", true)
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -75,10 +75,11 @@ func TestGameModel(t *testing.T) {
 	})
 
 	t.Run("it updates score", func(t *testing.T) {
-		mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_score=blue_score+$1 WHERE id=$2 RETURNING blue_score`)).WillReturnRows(mockConn.NewRows([]string{"blue_score"}).
-			AddRow(3)).
-			WithArgs("2", "1")
-		score, err := mockGameModel.IncreaseValue("1", "blue_score", "2")
+		mockConn.ExpectQuery(regexp.QuoteMeta(`UPDATE games SET blue_score=blue_score+$1 WHERE id=$2 RETURNING blue_score`)).
+			WillReturnRows(mockConn.NewRows([]string{"blue_score"}).
+				AddRow(3)).
+			WithArgs("2", "mockGameId")
+		score, err := mockGameModel.IncreaseValue("mockGameId", "blue_score", "2")
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -104,11 +105,11 @@ func TestGameModel(t *testing.T) {
 	t.Run("it adds user to game", func(t *testing.T) {
 		mockConn.ExpectBeginTx(pgx.TxOptions{})
 		mockConn.ExpectQuery(regexp.QuoteMeta("SELECT EXISTS(SELECT true FROM games WHERE id = $1)")).
-			WillReturnRows(mockConn.NewRows([]string{"true"}).AddRow(true)).WithArgs("1")
+			WillReturnRows(mockConn.NewRows([]string{"true"}).AddRow(true)).WithArgs("mockGameId")
 		mockConn.ExpectQuery(regexp.QuoteMeta("INSERT INTO users (name, game_id) VALUES($1, $2) RETURNING id")).
-			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow("2")).WithArgs("username", "1")
+			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow("mockUserId")).WithArgs("mockUserName", "mockGameId")
 		mockConn.ExpectCommit()
-		_, err := mockGameModel.Join("username", "1")
+		_, err := mockGameModel.Join("mockUserName", "mockGameId")
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -118,12 +119,12 @@ func TestGameModel(t *testing.T) {
 	t.Run("it creates new game", func(t *testing.T) {
 		mockConn.ExpectBeginTx(pgx.TxOptions{})
 		mockConn.ExpectQuery("INSERT INTO games DEFAULT VALUES RETURNING id").
-			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow("1"))
+			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow("mockGameId"))
 		mockConn.ExpectQuery(regexp.QuoteMeta("INSERT INTO users (name, team, game_id) VALUES($1, $2, $3) RETURNING id")).
-			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow(2)).
-			WithArgs("username", "1", "1")
+			WillReturnRows(mockConn.NewRows([]string{"id"}).AddRow("mockUserId")).
+			WithArgs("mockUserName", "blueTeam", "mockGameId")
 		mockConn.ExpectCommit()
-		_, err := mockGameModel.Create("username", "1")
+		_, err := mockGameModel.Create("mockUserName", "blueTeam")
 
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
@@ -146,10 +147,10 @@ func TestGameModel(t *testing.T) {
 			},
 		}
 		mockConn.ExpectQuery(regexp.QuoteMeta("SELECT id,name,team,ready,game_id FROM users WHERE game_id=$1 ORDER BY id")).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(mockConn.NewRows([]string{"id", "name", "team", "ready", "game_id"}).
 				AddRows(values...))
-		users := mockGameModel.Users("1")
+		users := mockGameModel.Users("mockGameId")
 
 		for i, user := range users {
 			if user.Name != values[i][1] {
@@ -160,18 +161,18 @@ func TestGameModel(t *testing.T) {
 
 	t.Run("it resets the game", func(t *testing.T) {
 		mockConn.ExpectExec(regexp.QuoteMeta(`UPDATE games SET red_poet_idx=DEFAULT,blue_poet_idx=DEFAULT,blue_score=DEFAULT,red_score=DEFAULT,in_progress=DEFAULT,words=DEFAULT WHERE id=$1`)).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		err := mockGameModel.Reset("1")
+		err := mockGameModel.Reset("mockGameId")
 		if err != nil {
 			t.Errorf("unexpected error %s", err)
 		}
 	})
 	t.Run("it gets the game", func(t *testing.T) {
 		mockConn.ExpectQuery(regexp.QuoteMeta(`SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1`)).
-			WithArgs("1").
+			WithArgs("mockGameId").
 			WillReturnRows(mockConn.NewRows([]string{"red_poet_idx", "blue_poet_idx", "red_score", "blue_score", "in_progress"}).
 				AddRows([]any{0, 0, 0, 0, true}))
-		mockGameModel.Get("1")
+		mockGameModel.Get("mockGameId")
 	})
 }
