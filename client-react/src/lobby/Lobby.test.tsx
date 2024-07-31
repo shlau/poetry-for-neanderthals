@@ -16,6 +16,7 @@ describe("Lobby", () => {
           sendMessage={sendMessageSpy}
           users={users}
           currentUser={currentUser}
+          gameData={{ redScore: 0, blueScore: 0 }}
         />
       );
       expect(screen.getByText("Start game").closest("button")).toHaveAttribute(
@@ -29,6 +30,7 @@ describe("Lobby", () => {
           sendMessage={sendMessageSpy}
           users={[{ id: "1", name: "user 1", ready: true } as User]}
           currentUser={currentUser}
+          gameData={{ redScore: 0, blueScore: 0 }}
         />
       );
       expect(
@@ -44,6 +46,7 @@ describe("Lobby", () => {
           sendMessage={sendMessageSpy}
           users={[{ id: "1", name: "user 1", team: Team.UNASSIGNED } as User]}
           currentUser={currentUser}
+          gameData={{ redScore: 0, blueScore: 0 }}
         />
       );
       expect(screen.getByText("Ready").closest("button")).toHaveAttribute(
@@ -57,6 +60,7 @@ describe("Lobby", () => {
           sendMessage={sendMessageSpy}
           users={[{ id: "1", name: "user 1", team: Team.BLUE } as User]}
           currentUser={currentUser}
+          gameData={{ redScore: 0, blueScore: 0 }}
         />
       );
       expect(screen.getByText("Ready").closest("button")).not.toHaveAttribute(
@@ -74,6 +78,7 @@ describe("Lobby", () => {
             { id: "1", name: "user 1", team: Team.BLUE, ready: true } as User,
           ]}
           currentUser={currentUser}
+          gameData={{ redScore: 0, blueScore: 0 }}
         />
       );
 
@@ -88,6 +93,7 @@ describe("Lobby", () => {
             { id: "1", name: "user 1", team: Team.BLUE, ready: false } as User,
           ]}
           currentUser={currentUser}
+          gameData={{ redScore: 0, blueScore: 0 }}
         />
       );
 

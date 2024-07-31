@@ -1,9 +1,15 @@
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import { GameProps } from "../gameSession/GameSession";
-import { Team, User } from "../models/User.model";
+import { Team } from "../models/User.model";
 import "./Game.less";
-import { Button, Snackbar } from "@mui/material";
+import { Snackbar } from "@mui/material";
 import BonkBat from "./BonkBat";
+import PoetActions from "./PoetActions";
+import WordCard from "./WordCard";
+import TeamSection from "./TeamSection";
+import Header from "./Header";
+import BonkButton from "./BonkButton";
+import Timer from "./Timer";
 
 export default function Game({
   sendMessage,
@@ -20,48 +26,6 @@ export default function Game({
 }: GameProps) {
   const [roundPaused, setRoundPaused] = useState(false);
   const isPoet = poet?.id === currentUser.id;
-  const gameOver = false;
-  const numSeconds = Math.abs(Math.ceil(duration / 1000));
-  const minutes = Math.floor(numSeconds / 60);
-  const seconds = numSeconds % 60;
-
-  const startRound = () => {
-    sendMessage(`startRound`);
-  };
-  const pauseResumeRound = () => {
-    let message = "";
-    if (roundPaused) {
-      message = `resumeRound:${duration}`;
-    } else {
-      message = "echo:pauseRound";
-    }
-    setRoundPaused((prevState) => !prevState);
-    sendMessage(message);
-  };
-
-  const updateScore = (amount: number) => {
-    const col = currentUser.team === Team.BLUE ? "blue_score" : "red_score";
-    sendMessage(`score:${col}:${amount}`);
-  };
-  const skipWord = () => {
-    updateScore(-1);
-  };
-  const bonkPoet = () => {
-    sendMessage("echo:bonk");
-  };
-
-  const getTeamUsers = (team: Team): Iterable<ReactNode> =>
-    (users ?? [])
-      .filter((user: User) => user.team === team)
-      .map((user: User) => {
-        return (
-          <div className="user-container" key={user.id}>
-            <span className="username">{user.name}</span>
-            {user.id === currentUser.id && <span>(YOU)</span>}
-            {user.id === poet?.id && <span>--(POET)</span>}
-          </div>
-        );
-      });
 
   return (
     <div className="gamepage">
@@ -73,119 +37,48 @@ export default function Game({
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       />
       <div className="page-body">
-        <div className="teams">
-          <div className="team red-team">
-            <h1>RED TEAM</h1>
-            <h1 className="score">SCORE: {redScore}</h1>
-            <div className="users-section">{getTeamUsers(Team.RED)}</div>
-          </div>
-        </div>
+        <TeamSection
+          users={users}
+          currentUser={currentUser}
+          poet={poet}
+          score={redScore}
+          team={Team.RED}
+        />
         <div className="page-center">
-          <div className="header">
-            <div className="header-text">
-              {isPoet ? "YOU ARE " : poet?.name + " IS"} THE POET
-            </div>
-            {poet?.team === currentUser?.team && !isPoet && (
-              <div className="header-text">YOU ARE GUESSING</div>
-            )}
-            {poet?.team !== currentUser?.team && (
-              <div className="header-text">YOU ARE BONKING</div>
-            )}
-          </div>
+          <Header poet={poet} isPoet={isPoet} currentUser={currentUser} />
           <div className="poet-section">
-            <div
-              className={`word-card ${
-                !roundInProgress ||
-                (!isPoet && currentUser?.team === poet?.team)
-                  ? "hide-card"
-                  : ""
-              }`}
-            >
-              <div className="word-container easy-word-container">
-                <div className="word-wrapper easy-word-wrapper">
-                  <div className="word-value">
-                    <span>1</span>
-                  </div>
-                  <span className="word-text easy-word-text">{word.easy}</span>
-                </div>
-              </div>
-              <div className="word-container hard-word-container">
-                <div className="word-wrapper hard-word-wrapper">
-                  <span className="word-text hard-word-text">{word.hard}</span>
-                  <div className="word-value">
-                    <span>3</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <WordCard
+              isPoet={isPoet}
+              currentUser={currentUser}
+              poet={poet}
+              roundInProgress={roundInProgress}
+              word={word}
+            />
           </div>
           <div>
-            <div className="timer">
-              <span>{minutes}</span>:
-              <span>{seconds?.toString()?.padStart(2, "0")}</span>
-            </div>
+            <Timer duration={duration} />
             {isPoet && (
-              <div className="poet-buttons">
-                <div className="timer-buttons">
-                  <Button
-                    variant="contained"
-                    disabled={roundInProgress || gameOver}
-                    onClick={startRound}
-                  >
-                    Start Round
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={pauseResumeRound}
-                    disabled={!roundInProgress || gameOver}
-                  >
-                    {roundPaused ? "Resume" : "Pause"}
-                  </Button>
-                </div>
-                <div className="score-buttons">
-                  <Button variant="contained" onClick={() => updateScore(-1)}>
-                    -1
-                  </Button>
-                  <Button variant="contained" onClick={() => updateScore(1)}>
-                    +1
-                  </Button>
-                  <Button variant="contained" onClick={() => updateScore(3)}>
-                    +3
-                  </Button>
-                  {roundInProgress && (
-                    <Button
-                      variant="contained"
-                      // color="warn"
-                      onClick={skipWord}
-                    >
-                      SKIP
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <PoetActions
+                sendMessage={sendMessage}
+                roundInProgress={roundInProgress}
+                roundPaused={roundPaused}
+                duration={duration}
+                setRoundPaused={setRoundPaused}
+                currentUser={currentUser}
+              />
             )}
             {poet?.team !== currentUser?.team && (
-              <div className="bonk-button">
-                <Button
-                  variant="contained"
-                  // color="warn"
-                  disabled={isPoet}
-                  onClick={bonkPoet}
-                >
-                  Bonk!
-                </Button>
-              </div>
+              <BonkButton sendMessage={sendMessage} isPoet={isPoet} />
             )}
-            {gameOver && <div>GAME OVER!</div>}
           </div>
         </div>
-        <div className="teams">
-          <div className="team blue-team">
-            <h1>BLUE TEAM</h1>
-            <h1 className="score">SCORE: {blueScore}</h1>
-            <div className="users-section">{getTeamUsers(Team.BLUE)}</div>
-          </div>
-        </div>
+        <TeamSection
+          users={users}
+          currentUser={currentUser}
+          poet={poet}
+          score={blueScore}
+          team={Team.BLUE}
+        />
       </div>
     </div>
   );
