@@ -10,6 +10,7 @@ import TeamSection from "./TeamSection";
 import Header from "./Header";
 import BonkButton from "./BonkButton";
 import Timer from "./Timer";
+import Chat from "./Chat";
 
 export default function Game({
   sendMessage,
@@ -23,6 +24,7 @@ export default function Game({
   word,
   bonkOpen,
   hideBonk,
+  chatMessages,
 }: GameProps) {
   const [roundPaused, setRoundPaused] = useState(false);
   const isPoet = poet?.id === currentUser.id;
@@ -78,6 +80,12 @@ export default function Game({
           poet={poet}
           score={blueScore}
           team={Team.BLUE}
+        />
+        <Chat
+          sendMessage={sendMessage}
+          chatMessages={chatMessages}
+          currentUser={currentUser}
+          poetId={poet?.id}
         />
       </div>
     </div>

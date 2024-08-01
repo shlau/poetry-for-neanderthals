@@ -5,6 +5,7 @@ import { Team, User } from "../models/User.model";
 import { GameData, GameMessage, Word } from "../models/Game.model";
 import Game from "../game/Game";
 import Lobby from "../lobby/Lobby";
+import { ChatMessage } from "../game/Chat";
 
 const ROUND_DURATION_MILLIS = 90000;
 export interface GameProps {
@@ -19,6 +20,7 @@ export interface GameProps {
   word: Word;
   bonkOpen: boolean;
   hideBonk: (event: React.SyntheticEvent | Event, reason?: string) => void;
+  chatMessages: ChatMessage[];
 }
 
 export interface LobbyProps {
@@ -40,6 +42,7 @@ export default function GameSession() {
   const [duration, setDuration] = useState(ROUND_DURATION_MILLIS);
   const [roundInProgress, setRoundInProgress] = useState(false);
   const [bonkOpen, setBonkOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([] as ChatMessage[]);
 
   const location = useLocation();
   const currentUserData: User = location.state;
@@ -130,6 +133,13 @@ export default function GameSession() {
           setGameInProgress(false);
           endRound();
           break;
+        case "chat":
+          const chatMessage: ChatMessage = message.data;
+          setChatMessages((prevMessages: ChatMessage[]) => [
+            ...prevMessages,
+            chatMessage,
+          ]);
+          break;
         default:
       }
     }
@@ -173,6 +183,7 @@ export default function GameSession() {
       word={word}
       bonkOpen={bonkOpen}
       hideBonk={hideBonk}
+      chatMessages={chatMessages}
     />
   ) : (
     <Lobby

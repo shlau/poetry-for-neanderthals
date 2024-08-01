@@ -5,7 +5,6 @@ import "@testing-library/jest-dom";
 import PoetActions from "./PoetActions";
 
 const currentUser = { id: "1", name: "user 1", team: Team.UNASSIGNED } as User;
-const users: User[] = [currentUser, { id: "2", name: "user 2" } as User];
 const sendMessageSpy = vi.fn();
 const setRoundPausedSpy = vi.fn();
 
