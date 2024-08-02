@@ -62,6 +62,8 @@ func (ws *GameSocket) HandleMessage() {
 			ws.handleStartRound(s, gameId.(string))
 		case "endRound":
 			ws.handleEndRound(s, msg, gameId.(string))
+		case "chat":
+			ws.handleChat(s, msg)
 		default:
 			return
 		}

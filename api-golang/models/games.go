@@ -21,6 +21,12 @@ type GameColumn struct {
 	Val  any
 }
 
+type Chat struct {
+	Id   string `json:"id"`
+	Name string `json:"name" required:"true"`
+	Team string `json:"team"`
+	Text string `json:"text"`
+}
 type Word struct {
 	Easy string `json:"easy"`
 	Hard string `json:"hard"`
@@ -217,7 +223,7 @@ func (g *GameModel) IncreaseValue(gameId string, col string, val string) (int, e
 }
 
 func (g *GameModel) UpdateCol(gameId string, col string, val any) error {
-	validCols := []string{"in_progress", "red_score", "blue_score", "poet_idx"}
+	validCols := []string{"in_progress", "red_score", "blue_score", "poet_idx", "words"}
 	if slices.Contains(validCols, col) {
 		stmt := fmt.Sprintf(`UPDATE games SET %s=$1 WHERE id=$2`, col)
 		_, err := g.Conn.Exec(context.Background(), stmt, val, gameId)

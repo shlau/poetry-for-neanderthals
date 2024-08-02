@@ -113,3 +113,29 @@ func (ws *GameSocket) handleEndRound(s *melody.Session, msg []byte, gameId strin
 	}
 	ws.endRound(message[1], gameId, s)
 }
+
+func (ws *GameSocket) handleChat(s *melody.Session, msg []byte) {
+	userId, exists := s.Get("userId")
+
+	if !exists {
+		log.Error("Missing session userId")
+		return
+	}
+
+	user, err := ws.u.Get(userId.(string))
+	if err != nil {
+		log.Error("Failed to get user for chat: ", err.Error())
+		return
+	}
+
+	message := strings.Split(string(msg), ":")
+	if len(message) != 2 {
+		log.Errorf("Invalid message: %s", msg)
+		return
+	}
+
+	chatMessage := models.Chat{Id: user.Id, Name: user.Name, Team: user.Team, Text: message[1]}
+	gameMessage := GameMessage{Data: chatMessage, Type: "chat"}
+	ws.broadcastGameMessage(gameMessage, s)
+
+}
