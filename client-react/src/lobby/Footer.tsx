@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Team, User } from "../models/User.model";
-import { uploadWords } from "../services/api/GamesService";
+import UploadDialog from "../dialogs/upload-dialog/UploadDialog";
 
 interface FooterProps {
   sendMessage: Function;
@@ -22,23 +22,9 @@ export default function Footer({
   const canStart =
     unReadyUsers.length < 1 && redUsers.length >= 1 && blueUsers.length >= 1;
   const [ready, setReady] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
   const onReadyPress = () => {
     sendMessage(`update:users:${currentUser.id}:ready:${!ready}`);
     setReady((prevState) => !prevState);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files: FileList | null = e.target.files;
-    if (files) {
-      setFile(files[0]);
-    }
-  };
-  const handleFileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (file) {
-      uploadWords(file, currentUser.gameId);
-    }
   };
 
   const onRandomizePress = () => {
@@ -74,10 +60,7 @@ export default function Footer({
       >
         Randomize Teams
       </Button>
-      <form onSubmit={handleFileSubmit}>
-        <input type="file" name="gameWords" onChange={handleFileChange} />
-        <Button type="submit">Upload Custom Words</Button>
-      </form>
+      <UploadDialog currentUser={currentUser} />
     </div>
   );
 }
