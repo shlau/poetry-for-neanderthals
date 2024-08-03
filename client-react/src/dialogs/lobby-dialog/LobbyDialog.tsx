@@ -63,7 +63,7 @@ export default function LobbyDialog({
             margin="dense"
             id="name"
             name="name"
-            label="Name"
+            label="Username"
             type="text"
             fullWidth
             variant="standard"
