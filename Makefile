@@ -5,6 +5,7 @@ endif
 
 DEV_COMPOSE_FILE=docker-compose-dev.yml
 DEBUG_COMPOSE_FILE=docker-compose-debug.yml
+PROD_COMPOSE_FILE=docker-compose-prod.yml
 
 .PHONY: postgres
 postgres:
@@ -25,6 +26,18 @@ migrate-up:
 .PHONY: migrate-down
 migrate-down:
 	migrate -path api-golang/db/migration/ -database postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/poetry?sslmode=disable -verbose down
+
+.PHONY: prod-compose-up
+prod-compose-up:
+	docker compose -f ${PROD_COMPOSE_FILE} up
+
+.PHONY: prod-compose-down
+prod-compose-down:
+	docker compose -f ${PROD_COMPOSE_FILE} down
+
+.PHONY: prod-compose-up-build
+prod-compose-up-build:
+	docker compose -f ${PROD_COMPOSE_FILE} up --build
 
 .PHONY: dev-compose-up
 dev-compose-up:

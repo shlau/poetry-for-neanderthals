@@ -2,7 +2,6 @@ import { vi, describe, it, expect } from "vitest";
 import { User, Team } from "../models/User.model";
 import { render, screen } from "@testing-library/react";
 import Footer from "./Footer";
-import "@testing-library/jest-dom";
 
 const currentUser = { id: "1", name: "user 1", team: Team.UNASSIGNED } as User;
 const users: User[] = [currentUser, { id: "2", name: "user 2" } as User];

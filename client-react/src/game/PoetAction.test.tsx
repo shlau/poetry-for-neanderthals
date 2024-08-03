@@ -1,7 +1,6 @@
 import { vi, describe, it, expect } from "vitest";
 import { User, Team } from "../models/User.model";
 import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import PoetActions from "./PoetActions";
 
 const currentUser = { id: "1", name: "user 1", team: Team.UNASSIGNED } as User;
