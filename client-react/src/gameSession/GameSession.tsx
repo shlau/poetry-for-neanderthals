@@ -88,7 +88,6 @@ export default function GameSession() {
 
   useEffect(() => {
     if (lastMessage !== null) {
-      console.log(JSON.parse(lastMessage.data));
       handleMessage(JSON.parse(lastMessage.data));
     }
   }, [lastMessage]);
