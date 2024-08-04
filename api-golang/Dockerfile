@@ -15,24 +15,3 @@ RUN go install github.com/air-verse/air@latest && \
 COPY . .
 
 CMD ["air","-c",".air.toml"]
-
-FROM build-base AS prod
-
-COPY . .
-
-RUN go build \
-  -ldflags="-linkmode external -extldflags -static" \
-  -tags netgo \
-  -o /api-golang
-
-
-EXPOSE 3000
-
-CMD ["/api-golang"]
-# FROM scratch
-
-# COPY --from=prod /app/api-golang .
-
-# EXPOSE 3000
-
-# CMD ["/api-golang"]

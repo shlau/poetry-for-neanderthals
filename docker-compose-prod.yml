@@ -23,7 +23,7 @@ services:
     image: api-golang-prod
     build:
       context: ./api-golang/
-      target: prod
+      dockerfile: prod.Dockerfile
     init: true
     networks:
       - backend
