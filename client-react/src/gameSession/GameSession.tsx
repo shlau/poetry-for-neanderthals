@@ -5,7 +5,7 @@ import { Team, User } from "../models/User.model";
 import { GameData, GameMessage, Word } from "../models/Game.model";
 import Game from "../game/Game";
 import Lobby from "../lobby/Lobby";
-import { ChatMessage } from "../game/Chat";
+import { ChatMessage } from "../game/chat/Chat";
 
 const ROUND_DURATION_MILLIS = 90000;
 export interface GameProps {

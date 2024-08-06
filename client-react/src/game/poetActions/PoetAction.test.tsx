@@ -1,5 +1,5 @@
 import { vi, describe, it, expect } from "vitest";
-import { User, Team } from "../models/User.model";
+import { User, Team } from "../../models/User.model";
 import { render, screen } from "@testing-library/react";
 import PoetActions from "./PoetActions";
 

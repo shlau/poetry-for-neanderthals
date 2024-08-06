@@ -1,5 +1,5 @@
-import { Word } from "../models/Game.model";
-import { User } from "../models/User.model";
+import { Word } from "../../models/Game.model";
+import { User } from "../../models/User.model";
 
 interface WordCardProps {
   isPoet: boolean;

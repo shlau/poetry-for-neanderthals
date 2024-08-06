@@ -1,7 +1,7 @@
 import { TextField } from "@mui/material";
 import "./Chat.less";
 import { ChangeEvent, useState } from "react";
-import { Team, User } from "../models/User.model";
+import { Team, User } from "../../models/User.model";
 
 export interface ChatMessage {
   text: string;

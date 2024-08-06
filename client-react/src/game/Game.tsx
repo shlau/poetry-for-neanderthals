@@ -3,14 +3,14 @@ import { GameProps } from "../gameSession/GameSession";
 import { Team } from "../models/User.model";
 import "./Game.less";
 import { Snackbar } from "@mui/material";
-import BonkBat from "./BonkBat";
-import PoetActions from "./PoetActions";
-import WordCard from "./WordCard";
-import TeamSection from "./TeamSection";
-import Header from "./Header";
-import BonkButton from "./BonkButton";
-import Timer from "./Timer";
-import Chat from "./Chat";
+import BonkBat from "./bonkBat/BonkBat";
+import PoetActions from "./poetActions/PoetActions";
+import BonkButton from "./bonkButton/BonkButton";
+import Timer from "./timer/Timer";
+import Chat from "./chat/Chat";
+import Header from "./header/Header";
+import TeamSection from "./teamSection/TeamSection";
+import WordCard from "./wordCard/WordCard";
 
 export default function Game({
   sendMessage,

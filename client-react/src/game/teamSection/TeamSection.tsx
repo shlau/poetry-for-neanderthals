@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Team, User } from "../models/User.model";
+import { User, Team } from "../../models/User.model";
 
 interface TeamSectionProps {
   users: User[];

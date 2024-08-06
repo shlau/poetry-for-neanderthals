@@ -1,5 +1,5 @@
 import { Button } from "@mui/material";
-import { Team, User } from "../models/User.model";
+import { Team, User } from "../../models/User.model";
 
 interface PoetActionsProps {
   sendMessage: Function;

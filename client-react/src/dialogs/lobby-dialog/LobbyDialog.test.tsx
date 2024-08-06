@@ -27,7 +27,7 @@ describe("LobbyDialog", () => {
     it("renders create dialog", async () => {
       await user.click(screen.getByRole("button", { name: /Create Lobby/i }));
       expect(screen.queryByText("Enter Lobby ID:")).toBeNull();
-      expect(screen.getByText("Name")).toBeDefined();
+      expect(screen.getByText("Username")).toBeDefined();
       expect(screen.getByText("Play")).toBeDefined();
       expect(screen.getByText("Cancel")).toBeDefined();
     });
@@ -52,7 +52,7 @@ describe("LobbyDialog", () => {
     it("should close with required inputs", async () => {
       await user.click(screen.getByRole("button", { name: /Create Lobby/i }));
 
-      const nameInput = await screen.findByText("Name");
+      const nameInput = await screen.findByText("Username");
 
       await user.type(nameInput, "name");
       expect(screen.getByText("Play")).toBeDefined();
@@ -81,7 +81,7 @@ describe("LobbyDialog", () => {
     it("renders join dialog", async () => {
       await user.click(screen.getByRole("button", { name: /Join Lobby/i }));
       expect(screen.getByText("Enter Lobby ID:")).toBeDefined();
-      expect(screen.getByText("Name")).toBeDefined();
+      expect(screen.getByText("Username")).toBeDefined();
       expect(screen.getByText("Play")).toBeDefined();
       expect(screen.getByText("Cancel")).toBeDefined();
     });
@@ -106,7 +106,7 @@ describe("LobbyDialog", () => {
     it("should close with required inputs", async () => {
       await user.click(screen.getByRole("button", { name: /Join Lobby/i }));
 
-      const nameInput = await screen.findByText("Name");
+      const nameInput = await screen.findByText("Username");
       const lobbyInput = await screen.findByText("Enter Lobby ID:");
 
       await user.type(nameInput, "name");
