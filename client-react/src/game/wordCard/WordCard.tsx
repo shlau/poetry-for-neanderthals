@@ -17,6 +17,7 @@ export default function WordCard({
 }: WordCardProps) {
   return (
     <div
+      data-testid="card-container"
       className={`word-card ${
         !roundInProgress || (!isPoet && currentUser?.team === poet?.team)
           ? "hide-card"
