@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
 import { useState } from "react";
-import { Team, User } from "../models/User.model";
-import UploadDialog from "../dialogs/upload-dialog/UploadDialog";
+import { Team, User } from "../../models/User.model";
+import UploadDialog from "../../dialogs/upload-dialog/UploadDialog";
 
 interface FooterProps {
   sendMessage: Function;

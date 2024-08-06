@@ -3,10 +3,10 @@ import "./Lobby.less";
 import { Team, User } from "../models/User.model";
 import CheckIcon from "@mui/icons-material/Check";
 import { LobbyProps } from "../gameSession/GameSession";
-import Footer from "./Footer";
-import TeamArea from "./TeamArea";
-import StagingArea from "./StagingArea";
-import GameResults from "./GameResults";
+import Footer from "./footer/Footer";
+import GameResults from "./gameResults/GameResults";
+import StagingArea from "./stagingArea/StagingArea";
+import TeamArea from "./teamArea/TeamArea";
 
 export default function Lobby({
   sendMessage,
