@@ -1,4 +1,4 @@
-import { Team, User } from "../models/User.model";
+import { Team, User } from "../../models/User.model";
 
 interface TeamAreaProps {
   currentUser: User;

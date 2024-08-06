@@ -1,5 +1,5 @@
 import React from "react";
-import * as bonkPng from "../assets/bonk-bat.png";
+import * as bonkPng from "../../assets/bonk-bat.png";
 import "./BonkBat.less";
 
 export default function BonkBat() {
