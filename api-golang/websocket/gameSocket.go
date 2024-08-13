@@ -86,13 +86,15 @@ func (ws *GameSocket) handleDisconnect() {
 		remainingUsers, err := ws.u.Remove(userId.(string), gameId.(string))
 		if err != nil {
 			log.Error("failed to remove user on disconnect: ", err.Error())
+			s.Close()
 			return
 		}
 
 		if remainingUsers > 0 {
 			game, err := ws.g.Get(gameId.(string))
 			if err != nil {
-				log.Error("Failed to game during disconnect: ", err.Error())
+				log.Error("Failed to get game during disconnect: ", err.Error())
+				s.Close()
 				return
 			}
 			if game.InProgress {
@@ -104,6 +106,7 @@ func (ws *GameSocket) handleDisconnect() {
 					redUsers, blueUsers, err := ws.getTeamUsers(gameId.(string))
 					if err != nil {
 						log.Error("Failed to get team users during disconnect: ", err.Error())
+						s.Close()
 						return
 					}
 
