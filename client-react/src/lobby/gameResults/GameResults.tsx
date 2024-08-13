@@ -1,5 +1,5 @@
 import React from "react";
-import { GameData } from "../models/Game.model";
+import { GameData } from "../../models/Game.model";
 
 interface GameResultsProps {
   gameData: GameData;
