@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -58,6 +59,34 @@ func (g *GameModel) Get(gameId string) (*Game, error) {
 	}
 
 	return game, nil
+}
+
+func (g *GameModel) AddCustomWords(gameId string, words []Word) error {
+	game := new(Game)
+	stmt := `SELECT words FROM games WHERE id=$1`
+	err := g.Conn.QueryRow(context.Background(), stmt, gameId).Scan(&game.Words)
+
+	if err != nil {
+		log.Error("Failed to get words: ", err.Error())
+		return err
+	}
+
+	updatedWords := append(game.Words, words...)
+	jsonEnc, err := json.Marshal(updatedWords)
+
+	if err != nil {
+		log.Error("Failed to encode updated words: ", err.Error())
+		return err
+	}
+
+	stmt = `UPDATE games set words=$1 where id=$2`
+	_, err = g.Conn.Exec(context.Background(), stmt, jsonEnc, gameId)
+	if err != nil {
+		log.Error("Failed to update game with custom words: ", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (g *GameModel) NextWord(gameId string) (Word, error) {
