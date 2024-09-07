@@ -41,6 +41,7 @@ type Game struct {
 	RedScore    int    `json:"redScore"`
 	BlueScore   int    `json:"blueScore"`
 	Words       []Word `json:"words"`
+	NumRounds   int    `json:"numRounds`
 }
 
 type GameModel struct {
@@ -49,9 +50,9 @@ type GameModel struct {
 
 func (g *GameModel) Get(gameId string) (*Game, error) {
 	game := new(Game)
-	stmt := `SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress FROM games WHERE id=$1`
+	stmt := `SELECT red_poet_idx, blue_poet_idx, red_score, blue_score, in_progress, num_rounds FROM games WHERE id=$1`
 	err := g.Conn.QueryRow(context.Background(), stmt, gameId).
-		Scan(&game.RedPoetIdx, &game.BluePoetIdx, &game.RedScore, &game.BlueScore, &game.InProgress)
+		Scan(&game.RedPoetIdx, &game.BluePoetIdx, &game.RedScore, &game.BlueScore, &game.InProgress, &game.NumRounds)
 
 	if err != nil {
 		log.Error("Failed to get game: ", err.Error())
@@ -259,7 +260,7 @@ func (g *GameModel) Join(username string, gameId string) (User, error) {
 }
 
 func (g *GameModel) IncreaseValue(gameId string, col string, val string) (int, error) {
-	validCols := []string{"red_score", "blue_score", "red_poet_idx", "blue_poet_idx"}
+	validCols := []string{"red_score", "blue_score", "red_poet_idx", "blue_poet_idx", "num_rounds"}
 	if slices.Contains(validCols, col) {
 		var updatedValue int
 		stmt := fmt.Sprintf(`UPDATE games SET %s=%s+$1 WHERE id=$2 RETURNING %s`, col, col, col)

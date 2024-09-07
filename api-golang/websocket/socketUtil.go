@@ -124,8 +124,8 @@ func (ws *GameSocket) switchPoet(gameId string, currentTeam string, s *melody.Se
 		return
 	}
 
-	numRounds := max(len(redUsers), len(blueUsers))
-	if newIdx >= numRounds*2 && currentTeam == RED_TEAM {
+	teamPlayers := max(len(redUsers), len(blueUsers))
+	if newIdx >= teamPlayers*game.NumRounds && currentTeam == RED_TEAM {
 		ws.endGame(gameId, s)
 		return
 	}

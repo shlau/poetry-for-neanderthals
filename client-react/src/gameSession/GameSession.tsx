@@ -28,6 +28,7 @@ export interface LobbyProps {
   users: User[];
   currentUser: User;
   gameData: GameData;
+  numRounds: string;
 }
 
 export default function GameSession() {
@@ -43,6 +44,7 @@ export default function GameSession() {
   const [roundInProgress, setRoundInProgress] = useState(false);
   const [bonkOpen, setBonkOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([] as ChatMessage[]);
+  const [numRounds, setNumRounds] = useState("1");
 
   const location = useLocation();
   const currentUserData: User = location.state;
@@ -101,6 +103,9 @@ export default function GameSession() {
   const handleMessage = (message: GameMessage) => {
     if (message.type && message.data) {
       switch (message.type) {
+        case "numRounds":
+          setNumRounds(message.data);
+          break;
         case "users":
           setUsers(message.data);
           break;
@@ -190,6 +195,7 @@ export default function GameSession() {
       users={users}
       currentUser={currentUser}
       gameData={gameData}
+      numRounds={numRounds}
     />
   );
 }

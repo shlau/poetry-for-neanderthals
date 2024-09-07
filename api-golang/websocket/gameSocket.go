@@ -50,6 +50,8 @@ func (ws *GameSocket) HandleMessage() {
 			ws.handleEcho(s, msg)
 		case "update":
 			ws.handleUpdate(s, msg, gameId.(string))
+		case "numRounds":
+			ws.handleNumRounds(s, msg, gameId.(string))
 		case "score":
 			ws.handleScore(s, msg, gameId.(string))
 		case "randomize":

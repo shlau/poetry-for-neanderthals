@@ -1,0 +1,1 @@
+ALTER TABLE games ADD num_rounds numeric DEFAULT 1 CHECK (num_rounds > 0);

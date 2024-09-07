@@ -13,6 +13,7 @@ export default function Lobby({
   users,
   currentUser,
   gameData,
+  numRounds,
 }: LobbyProps) {
   const getTeamUsers = (
     team: Team,
@@ -42,6 +43,7 @@ export default function Lobby({
         sendMessage={sendMessage}
         currentUser={currentUser}
         users={users}
+        numRounds={numRounds}
       />
       <GameResults gameData={gameData} />
     </div>

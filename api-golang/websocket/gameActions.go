@@ -38,6 +38,23 @@ func (ws *GameSocket) handleUpdate(s *melody.Session, msg []byte, gameId string)
 	}
 }
 
+func (ws *GameSocket) handleNumRounds(s *melody.Session, msg []byte, gameId string) {
+	message := strings.Split(string(msg), ":")
+	if len(message) != 2 {
+		log.Errorf("Invalid message: %s", msg)
+		return
+	}
+
+	val := message[1]
+	numRounds, err := ws.g.IncreaseValue(gameId, "num_rounds", val)
+	if err != nil {
+		log.Error("Failed to update score, ", err)
+	} else {
+		gameMessage := GameMessage{Data: fmt.Sprintf("%d", numRounds), Type: "numRounds"}
+		ws.broadcastGameMessage(gameMessage, s)
+	}
+}
+
 func (ws *GameSocket) handleScore(s *melody.Session, msg []byte, gameId string) {
 	message := strings.Split(string(msg), ":")
 	if len(message) != 3 {

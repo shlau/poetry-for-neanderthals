@@ -7,11 +7,13 @@ interface FooterProps {
   sendMessage: Function;
   currentUser: User;
   users: User[];
+  numRounds: string;
 }
 export default function Footer({
   sendMessage,
   currentUser,
   users,
+  numRounds,
 }: FooterProps) {
   const blueUsers = users.filter(
     (user: User) => user.ready && user.team === Team.BLUE
@@ -61,6 +63,12 @@ export default function Footer({
         Randomize Teams
       </Button>
       <UploadDialog currentUser={currentUser} />
+      <div className="rounds">
+        <span>Rounds:</span>
+        <Button onClick={() => sendMessage("numRounds:-1")}>-</Button>
+        <span>{numRounds}</span>
+        <Button onClick={() => sendMessage("numRounds:1")}>+</Button>
+      </div>
     </div>
   );
 }
