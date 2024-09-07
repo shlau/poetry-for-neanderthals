@@ -37,7 +37,7 @@ export default function GameSession() {
   const [redScore, setRedScore] = useState("0");
   const [blueScore, setBlueScore] = useState("0");
   const [poetId, setPoetId] = useState("");
-  const [word, setWord] = useState({ easy: "", hard: "" });
+  const [word, setWord] = useState<Word>({ easy: [], hard: [] });
   const [gameData, setGameData] = useState({} as GameData);
   const ref = useRef({ id: 0, endTime: Date.now() });
   const [duration, setDuration] = useState(ROUND_DURATION_MILLIS);
@@ -95,6 +95,7 @@ export default function GameSession() {
   }, [lastMessage]);
 
   const endRound = () => {
+    setWord({ easy: [], hard: [] });
     setRoundInProgress(false);
     clearInterval(ref.current.id);
     setDuration(0);
@@ -130,7 +131,13 @@ export default function GameSession() {
           setPoetId(message.data);
           break;
         case "wordUpdate":
-          setWord(message.data);
+          const easyWords = message.data.easy
+            .split(" ")
+            .map((w: string) => ({ value: w, revealed: false }));
+          const hardWords = message.data.hard
+            .split(" ")
+            .map((w: string) => ({ value: w, revealed: false }));
+          setWord({ easy: easyWords, hard: hardWords });
           break;
         case "endGame":
           setGameData(message.data);
@@ -150,27 +157,36 @@ export default function GameSession() {
   };
 
   const handleEcho = (message: GameMessage) => {
-    switch (message.data) {
-      case "startGame":
-        setRedScore("0");
-        setBlueScore("0");
-        setGameInProgress(true);
-        break;
-      case "endRound":
-        endRound();
-        break;
-      case "startRound":
-        ref.current.endTime = Date.now() + ROUND_DURATION_MILLIS;
-        setDuration(ROUND_DURATION_MILLIS);
-        startTimer();
-        break;
-      case "pauseRound":
-        pauseRoundTime();
-        break;
-      case "bonk":
-        setBonkOpen(true);
-        break;
-      default:
+    if (message.data.includes("reveal")) {
+      const wordData = message.data.split("-");
+      const wordType: "easy" | "hard" = wordData[1];
+      const wordIdx = wordData[2];
+      const wordCopy: Word = { ...word };
+      wordCopy[wordType][wordIdx].revealed = true;
+      setWord(wordCopy);
+    } else {
+      switch (message.data) {
+        case "startGame":
+          setRedScore("0");
+          setBlueScore("0");
+          setGameInProgress(true);
+          break;
+        case "endRound":
+          endRound();
+          break;
+        case "startRound":
+          ref.current.endTime = Date.now() + ROUND_DURATION_MILLIS;
+          setDuration(ROUND_DURATION_MILLIS);
+          startTimer();
+          break;
+        case "pauseRound":
+          pauseRoundTime();
+          break;
+        case "bonk":
+          setBonkOpen(true);
+          break;
+        default:
+      }
     }
   };
 

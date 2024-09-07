@@ -55,6 +55,7 @@ export default function Game({
               poet={poet}
               roundInProgress={roundInProgress}
               word={word}
+              sendMessage={sendMessage}
             />
           </div>
           <div>

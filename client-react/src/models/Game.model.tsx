@@ -4,8 +4,8 @@ export interface GameMessage {
 }
 
 export interface Word {
-  easy: string;
-  hard: string;
+  easy: Array<{ value: string; revealed: boolean }>;
+  hard: Array<{ value: string; revealed: boolean }>;
 }
 
 export interface GameData {

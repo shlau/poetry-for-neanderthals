@@ -88,10 +88,13 @@
   }
 
   .word-card {
-    &.hide-card {
-      .word-container {
-        display: none;
-      }
+    .hide-card {
+      visibility: hidden;
+    }
+
+    .revealed {
+      color: black !important;
+      visibility: visible;
     }
 
     display: flex;
@@ -108,6 +111,15 @@
       display: flex;
       justify-content: center;
       align-items: center;
+
+      .words {
+        max-width: 400px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+      }
 
       &.easy-word-container {
         .easy-word-wrapper {
@@ -156,6 +168,10 @@
 
         .word-text {
           font-size: 50px;
+
+          &:hover {
+            cursor: pointer;
+          }
         }
 
         .word-value {
