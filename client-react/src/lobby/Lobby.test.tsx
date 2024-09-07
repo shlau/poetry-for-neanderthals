@@ -18,6 +18,7 @@ describe("Lobby", () => {
           ]}
           currentUser={currentUser}
           gameData={{ redScore: 0, blueScore: 0 }}
+          numRounds={"1"}
         />
       );
 
@@ -33,6 +34,7 @@ describe("Lobby", () => {
           ]}
           currentUser={currentUser}
           gameData={{ redScore: 0, blueScore: 0 }}
+          numRounds={"1"}
         />
       );
 

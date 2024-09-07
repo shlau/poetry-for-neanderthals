@@ -14,6 +14,7 @@ describe("start button", () => {
         sendMessage={sendMessageSpy}
         users={users}
         currentUser={currentUser}
+        numRounds={"1"}
       />
     );
     expect(screen.getByText("Start game").closest("button")).toHaveAttribute(
@@ -30,6 +31,7 @@ describe("start button", () => {
           { id: "2", name: "user 2", ready: true, team: Team.RED } as User,
         ]}
         currentUser={currentUser}
+        numRounds={"1"}
       />
     );
     expect(
@@ -45,6 +47,7 @@ describe("ready button", () => {
         sendMessage={sendMessageSpy}
         users={[]}
         currentUser={currentUser}
+        numRounds={"1"}
       />
     );
     expect(screen.getByText("Ready").closest("button")).toHaveAttribute(
@@ -58,6 +61,7 @@ describe("ready button", () => {
         sendMessage={sendMessageSpy}
         users={[]}
         currentUser={{ id: "1", name: "user 1", team: Team.BLUE } as User}
+        numRounds={"1"}
       />
     );
     expect(screen.getByText("Ready").closest("button")).not.toHaveAttribute(

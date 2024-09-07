@@ -11,7 +11,8 @@ describe("WordCard", () => {
         currentUser={{ team: Team.BLUE } as User}
         poet={{ team: Team.BLUE } as User}
         roundInProgress={false}
-        word={{ easy: "easy word", hard: "hard word" }}
+        word={{ easy: [], hard: [] }}
+        sendMessage={() => null}
       />
     );
     expect(screen.getByTestId("card-container").classList).toContain(
@@ -26,7 +27,8 @@ describe("WordCard", () => {
         currentUser={{ team: Team.BLUE } as User}
         poet={{ team: Team.BLUE } as User}
         roundInProgress={true}
-        word={{ easy: "easy word", hard: "hard word" }}
+        word={{ easy: [], hard: [] }}
+        sendMessage={() => null}
       />
     );
     expect(screen.getByTestId("card-container").classList).toContain(
@@ -41,7 +43,8 @@ describe("WordCard", () => {
         currentUser={{ team: Team.RED } as User}
         poet={{ team: Team.BLUE } as User}
         roundInProgress={true}
-        word={{ easy: "easy word", hard: "hard word" }}
+        word={{ easy: [], hard: [] }}
+        sendMessage={() => null}
       />
     );
     expect(screen.getByTestId("card-container").classList).not.toContain(
@@ -56,7 +59,8 @@ describe("WordCard", () => {
         currentUser={{ team: Team.RED } as User}
         poet={{ team: Team.BLUE } as User}
         roundInProgress={true}
-        word={{ easy: "easy word", hard: "hard word" }}
+        word={{ easy: [], hard: [] }}
+        sendMessage={() => null}
       />
     );
     expect(screen.getByTestId("card-container").classList).not.toContain(

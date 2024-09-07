@@ -1,7 +1,6 @@
 import { MockInstance, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGame, joinGame, resetWords, uploadWords } from "./GamesService";
 import { Team } from "../../models/User.model";
-import { upload } from "@testing-library/user-event/dist/cjs/utility/upload.js";
 
 describe("Games Service", () => {
   let fetchSpy: MockInstance;
