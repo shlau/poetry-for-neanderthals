@@ -61,10 +61,29 @@ func (g *GameModel) Get(gameId string) (*Game, error) {
 	return game, nil
 }
 
+func (g *GameModel) ResetWords(gameId string) error {
+	stmt := `UPDATE games set words=default WHERE id=$1`
+	_, err := g.Conn.Exec(context.Background(), stmt, gameId)
+	if err != nil {
+		log.Error("Failed to reset game words", err.Error())
+		return err
+	}
+	return nil
+}
+
 func (g *GameModel) AddCustomWords(gameId string, words []Word) error {
+	ctx := context.Background()
+	tx, err := g.Conn.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		log.Error("Failed to start transaction: ", err.Error())
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+
 	game := new(Game)
 	stmt := `SELECT words FROM games WHERE id=$1`
-	err := g.Conn.QueryRow(context.Background(), stmt, gameId).Scan(&game.Words)
+	err = g.Conn.QueryRow(ctx, stmt, gameId).Scan(&game.Words)
 
 	if err != nil {
 		log.Error("Failed to get words: ", err.Error())
@@ -80,9 +99,14 @@ func (g *GameModel) AddCustomWords(gameId string, words []Word) error {
 	}
 
 	stmt = `UPDATE games set words=$1 where id=$2`
-	_, err = g.Conn.Exec(context.Background(), stmt, jsonEnc, gameId)
+	_, err = g.Conn.Exec(ctx, stmt, jsonEnc, gameId)
 	if err != nil {
 		log.Error("Failed to update game with custom words: ", err.Error())
+		return err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		log.Error("Failed to commit transaction: ", err.Error())
 		return err
 	}
 

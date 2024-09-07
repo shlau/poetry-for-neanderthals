@@ -73,8 +73,18 @@ func (app *Application) JoinGame(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, user)
 }
 
+func (app *Application) ResetWords(w http.ResponseWriter, r *http.Request) {
+	gameId := chi.URLParam(r, "gameId")
+	err := app.games.ResetWords(gameId)
+	if err != nil {
+		log.Error("failed to use reset words: ", err.Error())
+		app.serverError(w, r, err)
+	}
+}
+
 func (app *Application) UploadWords(w http.ResponseWriter, r *http.Request) {
 	gameId := chi.URLParam(r, "gameId")
+	uploadAction := chi.URLParam(r, "action")
 	r.ParseMultipartForm(10 << 20)
 	file, _, err := r.FormFile("gameWords")
 	if err != nil {
@@ -97,17 +107,23 @@ func (app *Application) UploadWords(w http.ResponseWriter, r *http.Request) {
 		newWords = append(newWords, models.Word{Easy: words[0], Hard: words[1]})
 	}
 
-	jsonEnc, err := json.Marshal(newWords)
-	if err != nil {
-		log.Error("failed to encode new words: ", err.Error())
-		app.serverError(w, r, err)
-		return
-	}
-
-	err = app.games.UpdateCol(gameId, "words", jsonEnc)
-	if err != nil {
-		log.Error("failed to use custom words: ", err.Error())
-		app.serverError(w, r, err)
-		return
+	switch uploadAction {
+	case "append":
+		err = app.games.AddCustomWords(gameId, newWords)
+		if err != nil {
+			log.Error("failed to use append words: ", err.Error())
+			app.serverError(w, r, err)
+		}
+	case "overwrite":
+		jsonEnc, err := json.Marshal(newWords)
+		if err != nil {
+			log.Error("failed to encode new words: ", err.Error())
+			app.serverError(w, r, err)
+		}
+		err = app.games.UpdateCol(gameId, "words", jsonEnc)
+		if err != nil {
+			log.Error("failed to overwrite words: ", err.Error())
+			app.serverError(w, r, err)
+		}
 	}
 }

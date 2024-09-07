@@ -1,6 +1,6 @@
 import "./UploadDialog.less";
 import { useState } from "react";
-import { uploadWords } from "../../services/api/GamesService";
+import { uploadWords, resetWords } from "../../services/api/GamesService";
 import { User } from "../../models/User.model";
 import {
   Alert,
@@ -35,21 +35,31 @@ export default function UploadDialog({ currentUser }: UploadDialogProps) {
       setFile(files[0]);
     }
   };
-  const handleFileSubmit = () => {
+  const handleFileSubmit = (action: string) => {
     if (file) {
       setLoading(true);
-      uploadWords(file, currentUser.gameId)
+      uploadWords(file, currentUser.gameId, action)
         .then(() => {
           setUploadError(false);
-          setOpen(false);
         })
         .catch(() => {
           setUploadError(true);
         })
         .finally(() => {
           setLoading(false);
+          setFile(null);
+          setOpen(false);
         });
     }
+  };
+
+  const handleWordReset = () => {
+    setLoading(true);
+    resetWords(currentUser.gameId).finally(() => {
+      setLoading(false);
+      setFile(null);
+      setOpen(false);
+    });
   };
 
   return (
@@ -86,10 +96,26 @@ export default function UploadDialog({ currentUser }: UploadDialogProps) {
           <Button
             variant="contained"
             color="success"
-            onClick={handleFileSubmit}
-            disabled={!file}
+            onClick={() => handleFileSubmit("overwrite")}
+            disabled={!file || loading}
           >
-            Upload
+            Overwrite Words
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => handleFileSubmit("append")}
+            disabled={!file || loading}
+          >
+            Add To Words
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleWordReset}
+            disabled={loading}
+          >
+            Reset Words
           </Button>
         </DialogActions>
       </Dialog>

@@ -37,12 +37,29 @@ export async function joinGame(name: string, gameId: string): Promise<User> {
   }
 }
 
-export async function uploadWords(file: File, gameId: string): Promise<void> {
+export async function resetWords(gameId: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_ENDPOINT}/reset_words/${gameId}`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      return Promise.reject(`Response status: ${response.status}`);
+    }
+  } catch (err: any) {
+    return Promise.reject(err);
+  }
+}
+
+export async function uploadWords(
+  file: File,
+  gameId: string,
+  action: string
+): Promise<void> {
   try {
     const formData = new FormData();
     formData.append("gameWords", file);
 
-    const response = await fetch(`${API_ENDPOINT}/upload/${gameId}`, {
+    const response = await fetch(`${API_ENDPOINT}/upload/${gameId}/${action}`, {
       method: "POST",
       body: formData,
     });
