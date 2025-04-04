@@ -35,6 +35,17 @@ prod-compose-up:
 prod-compose-down:
 	docker compose -f ${PROD_COMPOSE_FILE} down
 
+.PHONY: nginx-down
+nginx-down:
+	sudo systemctl stop nginx	
+
+.PHONY: postgres-down
+postgres-down:
+	sudo systemctl stop postgresql	
+
+.PHONY: prod-down
+prod-down: prod-compose-down nginx-down postgres-down
+
 .PHONY: prod-compose-up-build
 prod-compose-up-build:
 	docker compose -f ${PROD_COMPOSE_FILE} up --build
@@ -63,3 +74,6 @@ debug-compose-up-build:
 debug-compose-down:
 	docker compose -f ${DEV_COMPOSE_FILE} -f ${DEBUG_COMPOSE_FILE} down
 
+.PHONY: run-cerbot
+run-certbot:
+	sudo certbot certonly --standalone
